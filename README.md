@@ -1,5 +1,9 @@
 # Quaternion · Quantum Computing
 
+**▶ Open the course: [shanem73.github.io/Quaternion-Quantum-computing](https://shanem73.github.io/Quaternion-Quantum-computing/)**
+
+Jump straight to a module: [I · Hamilton's Quaternions](https://shanem73.github.io/Quaternion-Quantum-computing/#quaternions) · [II · Qubits on the Sphere](https://shanem73.github.io/Quaternion-Quantum-computing/#qubits)
+
 A two-module interactive course that runs in the browser, with no build step and no dependencies beyond Google Fonts.
 
 | Module | Folder | Steps | What it covers |
