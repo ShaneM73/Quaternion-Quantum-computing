@@ -1,0 +1,1359 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Qubits on the Sphere</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..800;1,6..96,400..700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: chapter rail left (chip strip on phones), one reading column; every concept gets a "bench" with Bloch spheres + a quaternion readout. x/y/z and i/j/k share red/green/blue everywhere. */
+:root{
+  --bg:#EEF0EC; --paper:#FAFBF8; --ink:#1B2430; --muted:#58626D; --rule:#D2D7CF;
+  --accent:#1E5A68; --accent-ink:#FFFFFF; --wash:#E3E9E6; --gold:#9A6A12;
+  --ci:#B5392B; --cj:#2C7A46; --ck:#2C5BA6;
+  --good:#2C7A46; --bad:#B5392B;
+  --f-display:"Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
+  --f-body:"Source Serif 4", "Source Serif Pro", Georgia, "Times New Roman", serif;
+  --f-ui:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#11161B; --paper:#182028; --ink:#E5E8E2; --muted:#9AA4AE; --rule:#2B353F;
+  --accent:#74B8C6; --accent-ink:#0E1A1F; --wash:#1D2A31; --gold:#E0B25A;
+  --ci:#EE7D6C; --cj:#6FC58D; --ck:#86AAF2; --good:#6FC58D; --bad:#EE7D6C; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#11161B; --paper:#182028; --ink:#E5E8E2; --muted:#9AA4AE; --rule:#2B353F;
+  --accent:#74B8C6; --accent-ink:#0E1A1F; --wash:#1D2A31; --gold:#E0B25A;
+  --ci:#EE7D6C; --cj:#6FC58D; --ck:#86AAF2; --good:#6FC58D; --bad:#EE7D6C; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:17px; line-height:1.62;
+  padding-left:max(16px, env(safe-area-inset-left,0px)); padding-right:max(16px, env(safe-area-inset-right,0px)); padding-block:0}
+.shell{display:grid; grid-template-columns:250px minmax(0,1fr); gap:40px; max-width:1200px; margin:0 auto; padding-block:32px 64px}
+nav.rail{min-width:0; position:sticky; top:calc(env(safe-area-inset-top,0px) + 24px); align-self:start; font-family:var(--f-ui); font-size:14px; max-height:calc(100vh - 48px); overflow-y:auto}
+.brand{font-family:var(--f-display); font-size:28px; line-height:1.05; font-weight:600; margin:0 0 4px; letter-spacing:-.01em}
+.brand em{font-style:italic; font-weight:500}
+.sub{color:var(--muted); font-size:13px; margin:0 0 18px}
+.part{font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin:12px 10px 4px; font-weight:600}
+.chap-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px}
+.chap-list button{all:unset; box-sizing:border-box; cursor:pointer; display:grid; grid-template-columns:26px 1fr 10px; align-items:baseline; width:100%; padding:6px 10px; border-radius:6px; color:var(--muted)}
+.chap-list button:hover{background:var(--wash); color:var(--ink)}
+.chap-list button:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+.chap-list button[aria-current="true"]{background:var(--paper); color:var(--ink); box-shadow:0 0 0 1px var(--rule)}
+.chap-list .n{font-family:var(--f-mono); font-size:12px}
+.chap-list .seen{width:7px; height:7px; border-radius:50%; align-self:center}
+.chap-list .seen.on{background:var(--accent)}
+.progress{margin-top:16px; height:4px; background:var(--rule); border-radius:2px; overflow:hidden}
+.progress span{display:block; height:100%; background:var(--accent); width:0; transition:width .3s}
+.progress-label{font-size:12px; color:var(--muted); margin-top:6px}
+
+main{min-width:0; max-width:820px}
+section.ch{display:flex; flex-direction:column; gap:18px}
+.eyebrow{font-family:var(--f-ui); text-transform:uppercase; letter-spacing:.12em; font-size:12px; color:var(--accent); font-weight:600; margin:0}
+h1,h2,h3{font-family:var(--f-display); text-wrap:balance; margin:0; font-weight:600}
+h1{font-size:clamp(32px, 5vw, 48px); line-height:1.06; letter-spacing:-.015em}
+h2{font-size:25px; line-height:1.15; margin-top:12px}
+h3{font-size:19px; line-height:1.2}
+p{margin:0; max-width:68ch}
+.lede{font-size:19px; color:var(--muted); max-width:62ch}
+ul.plain, ol.plain{margin:0; padding-left:1.25em; max-width:66ch} ul.plain li+li, ol.plain li+li{margin-top:6px}
+.m{font-style:italic; white-space:nowrap}
+.mono{font-family:var(--f-mono); font-size:.88em}
+.qi{color:var(--ci); font-style:italic; font-weight:600}
+.qj{color:var(--cj); font-style:italic; font-weight:600}
+.qk{color:var(--ck); font-style:italic; font-weight:600}
+.eq{font-style:italic; font-size:19px; text-align:center; padding:12px; background:var(--paper); border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); overflow-x:auto; white-space:nowrap}
+.eq small{display:block; font-style:normal; font-family:var(--f-ui); font-size:12px; color:var(--muted); margin-top:4px; white-space:normal}
+
+.bench{background:var(--paper); border:1px solid var(--rule); border-radius:10px; padding:18px; display:flex; flex-direction:column; gap:14px; min-width:0}
+.bench-head{display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap}
+.bench-head .tag{font-family:var(--f-ui); font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted)}
+.hint{font-family:var(--f-ui); font-size:13px; color:var(--muted)}
+canvas{display:block; width:100%; max-width:100%; border-radius:6px; background:var(--bg); touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; cursor:grab}
+canvas:active{cursor:grabbing}
+canvas:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.spheres{display:grid; grid-template-columns:repeat(auto-fit, minmax(210px,1fr)); gap:12px}
+.spheres figure{margin:0; display:flex; flex-direction:column; gap:4px; min-width:0}
+.spheres figcaption{font-family:var(--f-ui); font-size:12.5px; color:var(--muted); text-align:center}
+.spheres figcaption b{color:var(--ink); font-weight:600}
+.split{display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:16px; align-items:start}
+.split > *{min-width:0}
+.stack{display:flex; flex-direction:column; gap:12px; min-width:0}
+.row{display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center}
+.cols{display:grid; grid-template-columns:repeat(auto-fit, minmax(230px,1fr)); gap:14px}
+.cols > *{min-width:0}
+label.ctl{font-family:var(--f-ui); font-size:13px; color:var(--muted); display:flex; flex-direction:column; gap:3px; min-width:140px; flex:1}
+label.ctl b{color:var(--ink); font-family:var(--f-mono); font-weight:500}
+label.chk{font-family:var(--f-ui); font-size:13.5px; display:flex; gap:6px; align-items:center; cursor:pointer}
+input[type=range]{width:100%; accent-color:var(--accent)}
+input[type=number], select{font-family:var(--f-mono); font-size:14px; padding:6px 8px; border:1px solid var(--rule); border-radius:6px; background:var(--bg); color:var(--ink); width:100%}
+input:focus-visible, button:focus-visible, select:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.btn{font-family:var(--f-ui); font-size:14px; font-weight:500; border:1px solid var(--rule); background:var(--bg); color:var(--ink); padding:7px 12px; border-radius:6px; cursor:pointer; line-height:1.2}
+.btn:hover{border-color:var(--accent)}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+.btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.btn.gate{font-family:var(--f-mono); min-width:44px; padding:7px 9px}
+.btn.on{background:var(--wash); border-color:var(--accent); color:var(--accent); font-weight:600}
+.btnset{display:flex; flex-wrap:wrap; gap:6px}
+.readout{font-family:var(--f-mono); font-size:13px; background:var(--bg); border-radius:6px; padding:10px 12px; line-height:1.75; overflow-x:auto; white-space:nowrap}
+.readout.wrap{white-space:normal; overflow-wrap:anywhere}
+.readout .k{color:var(--muted)}
+.readout b{font-weight:600}
+.callout{border-left:3px solid var(--accent); padding:4px 0 4px 16px; max-width:66ch}
+details.check{border:1px dashed var(--rule); border-radius:8px; padding:10px 14px}
+details.check summary{cursor:pointer; font-family:var(--f-ui); font-weight:600; font-size:14px; color:var(--accent)}
+details.check[open] summary{margin-bottom:8px}
+.pager{display:flex; justify-content:space-between; gap:12px; margin-top:26px; padding-top:18px; border-top:1px solid var(--rule); flex-wrap:wrap}
+.pager .btn{padding:10px 16px; text-align:left}
+.pager .btn small{display:block; font-size:11px; opacity:.75; text-transform:uppercase; letter-spacing:.1em}
+
+table.data{border-collapse:collapse; font-size:15px; width:100%}
+table.data th, table.data td{border-bottom:1px solid var(--rule); padding:7px 10px; text-align:left; vertical-align:top}
+table.data th{font-family:var(--f-ui); font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:600}
+.tbl{overflow-x:auto}
+
+/* amplitude bars */
+.amps{display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:4px 10px; align-items:center; font-family:var(--f-mono); font-size:13px}
+.amps .bar{height:12px; background:var(--wash); border-radius:3px; position:relative; overflow:hidden}
+.amps .bar span{position:absolute; inset:0 auto 0 0; background:var(--accent); border-radius:3px; transition:width .25s}
+.amps .ph{display:inline-block; width:14px; height:14px; vertical-align:-2px; margin-right:6px}
+.hist{display:grid; grid-template-columns:auto minmax(0,1fr) 4.5em; gap:6px 10px; align-items:center; font-family:var(--f-mono); font-size:13px}
+.hist .bar{height:18px; background:var(--wash); border-radius:3px; position:relative; overflow:hidden}
+.hist .bar span{position:absolute; inset:0 auto 0 0; background:var(--accent)}
+.hist .bar i{position:absolute; top:-2px; bottom:-2px; width:2px; background:var(--gold)}
+.steps{display:flex; flex-wrap:wrap; gap:4px; font-family:var(--f-ui); font-size:12.5px; list-style:none; margin:0; padding:0}
+.steps li{padding:4px 9px; border-radius:20px; border:1px solid var(--rule); color:var(--muted)}
+.steps li.done{color:var(--ink); background:var(--wash)}
+.steps li.cur{color:var(--accent-ink); background:var(--accent); border-color:var(--accent)}
+.badge{font-family:var(--f-ui); font-size:12px; padding:2px 9px; border-radius:20px; background:var(--wash); color:var(--accent); font-weight:600; white-space:nowrap}
+.badge.warn{color:var(--bad)} .badge.ok{color:var(--good)}
+.legend{display:flex; gap:12px; flex-wrap:wrap; font-family:var(--f-ui); font-size:12px; color:var(--muted)}
+.legend span::before{content:""; display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; vertical-align:-1px; background:var(--sw)}
+.dict{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); border:1px solid var(--rule); border-radius:10px; overflow:hidden; background:var(--paper)}
+.dict > div{padding:14px; min-width:0}
+.dict > div + div{border-left:1px solid var(--rule)}
+.dict h3{font-size:16px; font-family:var(--f-ui); text-transform:uppercase; letter-spacing:.1em; color:var(--muted); font-weight:600; margin-bottom:6px}
+.dict p{font-size:16px}
+svg text{font-family:var(--f-ui)}
+.quiz{display:flex; flex-direction:column; gap:14px}
+.qcard{background:var(--paper); border:1px solid var(--rule); border-radius:10px; padding:16px; display:flex; flex-direction:column; gap:10px}
+.qcard .opts{display:flex; flex-direction:column; gap:6px}
+.qcard label{display:flex; gap:8px; align-items:baseline; cursor:pointer; font-size:16px}
+.fb{font-family:var(--f-ui); font-size:14px}
+.fb.ok{color:var(--good)} .fb.no{color:var(--bad)}
+.score{font-family:var(--f-display); font-size:24px}
+
+@media (max-width: 860px){
+  .shell{grid-template-columns:minmax(0,1fr); gap:18px; padding-block:18px 48px}
+  nav.rail{position:static; max-height:none; overflow:visible}
+  .part{display:none}
+  .chap-list{flex-direction:row; overflow-x:auto; gap:6px; padding-bottom:6px}
+  .chap-list li{flex:0 0 auto}
+  .chap-list button{grid-template-columns:auto auto; gap:6px; white-space:nowrap; border:1px solid var(--rule)}
+  .chap-list .seen{display:none}
+  .split{grid-template-columns:minmax(0,1fr)}
+  .dict{grid-template-columns:minmax(0,1fr)}
+  .dict > div + div{border-left:0; border-top:1px solid var(--rule)}
+  body{font-size:16.5px}
+  .m{white-space:normal}
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important; animation:none!important} }
+</style>
+
+<div class="shell">
+  <nav class="rail" aria-label="Chapters">
+    <p class="brand">Qubits on the <em>Sphere</em></p>
+    <p class="sub">Quantum computing, one rotation at a time · 14 steps</p>
+    <ol class="chap-list" id="chapList"></ol>
+    <div class="progress" aria-hidden="true"><span id="progBar"></span></div>
+    <div class="progress-label" id="progLabel"></div>
+  </nav>
+
+  <main id="main">
+
+  <!-- 0 -->
+  <section class="ch" data-id="intro" data-title="Start here" data-part="Foundations">
+    <p class="eyebrow">Step 0 · Orientation</p>
+    <h1>Quantum computing, drawn on a sphere</h1>
+    <p class="lede">A single qubit lives on a sphere, and every operation on it is a rotation. Hamilton’s quaternions are the natural numbers for rotations. This course uses that one picture, sphere plus quaternion, to explain every core idea of quantum computing, from measurement to Grover’s algorithm and error correction.</p>
+    <div class="bench">
+      <div class="bench-head"><h3>The Bloch sphere</h3><span class="tag">Drag to turn it · arrow keys work too</span></div>
+      <canvas id="cv-hero" data-h="360" tabindex="0" aria-label="Bloch sphere with the six cardinal qubit states marked"></canvas>
+      <p class="hint">North pole |0⟩, south pole |1⟩. On the equator: |+⟩ and |−⟩ on the x-axis, |+i⟩ and |−i⟩ on the y-axis. Every other point is a superposition.</p>
+    </div>
+    <h2>The dictionary you will use throughout</h2>
+    <div class="dict">
+      <div><h3>Quaternion</h3><p class="m" style="white-space:normal">q = cos(θ/2) + <b>n</b> sin(θ/2)</p><p>with <span class="m"><span class="qi">i</span>² = <span class="qj">j</span>² = <span class="qk">k</span>² = <span class="qi">i</span><span class="qj">j</span><span class="qk">k</span> = −1</span></p></div>
+      <div><h3>Qubit gate</h3><p class="m" style="white-space:normal">U = cos(θ/2) I − i sin(θ/2) (<b>n</b>·<b>σ</b>)</p><p>an SU(2) matrix, using <span class="m"><span class="qi">i</span> ↔ −iσ<sub>x</sub>, <span class="qj">j</span> ↔ −iσ<sub>y</sub>, <span class="qk">k</span> ↔ −iσ<sub>z</sub></span></p></div>
+      <div><h3>Sphere</h3><p class="m" style="white-space:normal"><b>r</b> ↦ q <b>r</b> q*</p><p>rotates the Bloch vector by θ about the axis <b>n</b></p></div>
+    </div>
+    <p>One quaternion, three faces. The half angle θ/2, the sign ambiguity q ≈ −q and the noncommuting <span class="qi">i</span>, <span class="qj">j</span>, <span class="qk">k</span> all show up as real quantum effects in the steps ahead.</p>
+    <h2>Course map</h2>
+    <div class="tbl"><table class="data">
+      <tr><th>Step</th><th>Concept</th><th>What you do on the sphere</th></tr>
+      <tr><td>1</td><td>The qubit</td><td>Steer a state with θ and φ and watch global phase do nothing</td></tr>
+      <tr><td>2</td><td>Measurement</td><td>Project onto any axis and fire shots</td></tr>
+      <tr><td>3</td><td>Gates</td><td>Apply X, Y, Z, H, S, T and read off the quaternion product</td></tr>
+      <tr><td>4</td><td>Universality</td><td>Rebuild any gate from three rotations</td></tr>
+      <tr><td>5</td><td>Interference</td><td>Turn a phase into a probability</td></tr>
+      <tr><td>6</td><td>Noise</td><td>Watch T₁, T₂ and a spin echo inside the Bloch ball</td></tr>
+      <tr><td>7</td><td>Entanglement</td><td>See two spheres shrink to their centres</td></tr>
+      <tr><td>8</td><td>Phase kickback</td><td>Run Deutsch’s algorithm step by step</td></tr>
+      <tr><td>9</td><td>Teleportation</td><td>Fix Bob’s qubit with the quaternions 1, <span class="qi">i</span>, <span class="qj">j</span>, <span class="qk">k</span></td></tr>
+      <tr><td>10</td><td>Grover search</td><td>Two half-turns make one rotation toward the answer</td></tr>
+      <tr><td>11</td><td>Gate synthesis</td><td>Approximate any rotation with H and T</td></tr>
+      <tr><td>12</td><td>Error correction</td><td>Catch a continuous error with a discrete measurement</td></tr>
+    </table></div>
+    <div class="callout"><p><b>Prerequisites.</b> Complex numbers, 2×2 matrices, and the quaternion basics: the product rule, the conjugate, and rotation by <span class="m">q<b>v</b>q*</span>. Your progress is saved in this browser.</p></div>
+  </section>
+
+  <!-- 1 -->
+  <section class="ch" data-id="qubit" data-title="The qubit" data-part="Foundations" hidden>
+    <p class="eyebrow">Step 1 · State</p>
+    <h1>A qubit is a point on a sphere</h1>
+    <p>A qubit state is a unit vector in ℂ²: <span class="m">|ψ⟩ = α|0⟩ + β|1⟩</span> with <span class="m">|α|² + |β|² = 1</span>. That is four real numbers with one constraint, so a 3-sphere, the same space as unit quaternions. Multiplying the whole state by a phase <span class="m">e<sup>iγ</sup></span> changes nothing you can ever measure. Removing that one redundant number leaves an ordinary 2-sphere, the <b>Bloch sphere</b>:</p>
+    <div class="eq">|ψ⟩ = cos(θ/2)|0⟩ + e<sup>iφ</sup> sin(θ/2)|1⟩ &nbsp;⟷&nbsp; <b>r</b> = (sin θ cos φ, sin θ sin φ, cos θ)<small>θ is the polar angle from |0⟩ and φ the azimuth. The amplitudes use θ/2, the same half angle as a rotation quaternion.</small></div>
+
+    <div class="bench">
+      <div class="bench-head"><h3>Steer a qubit</h3><span class="tag">Interactive</span></div>
+      <div class="split">
+        <canvas id="cv-qubit" data-h="360" tabindex="0" aria-label="Bloch sphere showing the chosen qubit state"></canvas>
+        <div class="stack">
+          <label class="ctl" for="qb-th">Polar angle θ <b id="qb-th-v"></b><input id="qb-th" type="range" min="0" max="180" value="60"></label>
+          <label class="ctl" for="qb-ph">Azimuth φ <b id="qb-ph-v"></b><input id="qb-ph" type="range" min="0" max="360" value="45"></label>
+          <label class="ctl" for="qb-g">Global phase γ <b id="qb-g-v"></b><input id="qb-g" type="range" min="0" max="360" value="0"></label>
+          <div class="btnset" id="qb-presets"></div>
+          <svg id="qb-phasors" viewBox="0 0 300 130" width="100%" role="img" aria-label="Amplitudes alpha and beta drawn as arrows in the complex plane"></svg>
+        </div>
+      </div>
+      <div class="readout" id="qb-read"></div>
+    </div>
+    <p>Move the global phase γ: both amplitude arrows spin together, the numbers α and β change, and the point on the sphere does not move. Only the <b>relative</b> phase φ between the two amplitudes is physical.</p>
+    <h2>The quaternion that prepares the state</h2>
+    <p>Start at |0⟩ (the north pole). Rotate by θ about y, then by φ about z. As quaternions that is <span class="m">q = R<sub>z</sub>(φ) R<sub>y</sub>(θ) = (cos φ/2 + <span class="qk">k</span> sin φ/2)(cos θ/2 + <span class="qj">j</span> sin θ/2)</span>. The matching SU(2) matrix sends |0⟩ to <span class="m">e<sup>−iφ/2</sup>|ψ⟩</span>, which is |ψ⟩ up to a global phase. The readout shows this q for your current state.</p>
+    <details class="check"><summary>Check yourself</summary><p>Where on the sphere is <span class="m">(|0⟩ − i|1⟩)/√2</span>? <em>Answer:</em> θ = 90°, and <span class="m">e<sup>iφ</sup> = −i</span> gives φ = 270°. That is the −y direction, the state |−i⟩.</p></details>
+  </section>
+
+  <!-- 2 -->
+  <section class="ch" data-id="measure" data-title="Measurement" data-part="Foundations" hidden>
+    <p class="eyebrow">Step 2 · Born rule</p>
+    <h1>Measuring is projecting onto an axis</h1>
+    <p>A measurement picks an axis <b>n</b> through the sphere and returns one of two answers, +1 (the state <b>n</b>) or −1 (the state −<b>n</b>). The probabilities depend only on how far the Bloch vector <b>r</b> sticks out along that axis:</p>
+    <div class="eq">P(+<b>n</b>) = (1 + <b>r</b>·<b>n</b>) / 2 = cos²(α/2)<small>α is the angle between r and n. The half angle appears again.</small></div>
+    <p>After the measurement the state <b>collapses</b> to the pole it reported. Measuring again along the same axis repeats the answer. A standard quantum computer measures only along z. Any other axis is reached by first rotating the state with a gate. For example, an X-basis measurement is H followed by a Z measurement, because the quaternion of H swaps the x and z axes.</p>
+    <div class="bench">
+      <div class="bench-head"><h3>Shots on a sphere</h3><span class="tag">Interactive</span></div>
+      <div class="split">
+        <canvas id="cv-meas" data-h="360" tabindex="0" aria-label="Bloch sphere with measurement axis"></canvas>
+        <div class="stack">
+          <div class="hint">State</div>
+          <label class="ctl" for="ms-th">θ <b id="ms-th-v"></b><input id="ms-th" type="range" min="0" max="180" value="50"></label>
+          <label class="ctl" for="ms-ph">φ <b id="ms-ph-v"></b><input id="ms-ph" type="range" min="0" max="360" value="20"></label>
+          <div class="hint">Measurement axis</div>
+          <div class="btnset" id="ms-basis"></div>
+          <label class="ctl" for="ms-az">Custom azimuth <b id="ms-az-v"></b><input id="ms-az" type="range" min="0" max="360" value="0"></label>
+          <label class="ctl" for="ms-el">Custom elevation <b id="ms-el-v"></b><input id="ms-el" type="range" min="-90" max="90" value="90"></label>
+        </div>
+      </div>
+      <div class="row"><button class="btn primary" id="ms-one">Measure once (collapses)</button><button class="btn" id="ms-100">Run 100 shots</button><button class="btn" id="ms-1000">Run 1000 shots</button><button class="btn" id="ms-clear">Clear counts</button></div>
+      <div class="hist" id="ms-hist"></div>
+      <div class="readout" id="ms-read"></div>
+      <p class="hint">Shots re-prepare the state each time, so they do not collapse it. The gold tick marks the Born-rule prediction.</p>
+    </div>
+    <details class="check"><summary>Check yourself</summary><p>The state |+⟩ is measured along z. What are the odds? Then it is measured along x. <em>Answer:</em> along z, <b>r</b>·<b>n</b> = 0 gives 50/50. Along x, <b>r</b>·<b>n</b> = 1 gives +1 every time.</p></details>
+  </section>
+
+  <!-- 3 -->
+  <section class="ch" data-id="gates" data-title="Gates are quaternions" data-part="Foundations" hidden>
+    <p class="eyebrow">Step 3 · Single-qubit gates</p>
+    <h1>Every single-qubit gate is a rotation</h1>
+    <p>A gate is a 2×2 unitary matrix. Factor out a global phase and it lands in SU(2), which is exactly the group of unit quaternions. The sphere then turns by the sandwich <span class="m"><b>r</b> ↦ q<b>r</b>q*</span>. A circuit of gates g₁, g₂, …, g<sub>n</sub> is the single quaternion <span class="m">q = q<sub>n</sub> ⋯ q₂ q₁</span>, with the last gate on the left.</p>
+    <div class="tbl"><table class="data">
+      <tr><th>Gate</th><th>Matrix</th><th>Rotation</th><th>Quaternion</th><th>Phase</th></tr>
+      <tr><td>X</td><td class="mono">[0 1; 1 0]</td><td>180° about x</td><td class="m"><span class="qi">i</span></td><td class="mono">i</td></tr>
+      <tr><td>Y</td><td class="mono">[0 −i; i 0]</td><td>180° about y</td><td class="m"><span class="qj">j</span></td><td class="mono">i</td></tr>
+      <tr><td>Z</td><td class="mono">[1 0; 0 −1]</td><td>180° about z</td><td class="m"><span class="qk">k</span></td><td class="mono">i</td></tr>
+      <tr><td>H</td><td class="mono">[1 1; 1 −1]/√2</td><td>180° about (x+z)/√2</td><td class="m">(<span class="qi">i</span> + <span class="qk">k</span>)/√2</td><td class="mono">i</td></tr>
+      <tr><td>S</td><td class="mono">[1 0; 0 i]</td><td>90° about z</td><td class="m">(1 + <span class="qk">k</span>)/√2</td><td class="mono">e<sup>iπ/4</sup></td></tr>
+      <tr><td>T</td><td class="mono">[1 0; 0 e<sup>iπ/4</sup>]</td><td>45° about z</td><td class="m">cos 22.5° + <span class="qk">k</span> sin 22.5°</td><td class="mono">e<sup>iπ/8</sup></td></tr>
+      <tr><td>R<sub><b>n</b></sub>(θ)</td><td class="mono">e<sup>−iθ(<b>n</b>·σ)/2</sup></td><td>θ about <b>n</b></td><td class="m">cos θ/2 + <b>n</b> sin θ/2</td><td class="mono">1</td></tr>
+    </table></div>
+    <p class="hint">Matrix = phase × SU(2) matrix of the quaternion. For example X = i · (−iσ<sub>x</sub>).</p>
+    <div class="bench">
+      <div class="bench-head"><h3>Gate lab</h3><span class="tag">Click gates to build a circuit</span></div>
+      <div class="split">
+        <canvas id="cv-gates" data-h="380" tabindex="0" aria-label="Bloch sphere showing the effect of gates"></canvas>
+        <div class="stack">
+          <div class="btnset" id="gt-palette"></div>
+          <label class="ctl" for="gt-ang"><span>Angle for R<sub>x</sub>, R<sub>y</sub>, R<sub>z</sub>, P</span> <b id="gt-ang-v"></b><input id="gt-ang" type="range" min="-180" max="180" value="45"></label>
+          <div class="hint">Try an identity</div>
+          <div class="btnset" id="gt-presets"></div>
+          <button class="btn" id="gt-reset">Reset to |0⟩</button>
+        </div>
+      </div>
+      <div class="readout" id="gt-read"></div>
+      <p class="hint" id="gt-note">The dashed line is the axis of the gate being applied.</p>
+    </div>
+    <h2>Noncommutativity is physics</h2>
+    <p>Since <span class="m"><span class="qi">i</span><span class="qj">j</span> = <span class="qk">k</span></span> but <span class="m"><span class="qj">j</span><span class="qi">i</span> = −<span class="qk">k</span></span>, the circuits “X then Y” and “Y then X” are the same rotation with opposite quaternion signs. As matrices, XY = iZ and YX = −iZ. They differ by a global phase of −1, invisible here, but it matters once the gates are controlled by another qubit (Step 8).</p>
+    <details class="check"><summary>Check yourself</summary><p>Use quaternions to show HXH = Z up to phase. <em>Answer:</em> with h = (<span class="qi">i</span> + <span class="qk">k</span>)/√2, the product is <span class="m">h<span class="qi">i</span> = (−1 + <span class="qj">j</span>)/√2</span>, so <span class="m">h<span class="qi">i</span>h = ½(−1 + <span class="qj">j</span>)(<span class="qi">i</span> + <span class="qk">k</span>) = ½(−<span class="qi">i</span> − <span class="qk">k</span> − <span class="qk">k</span> + <span class="qi">i</span>) = −<span class="qk">k</span></span>, which is Z up to sign. Confirm it with the preset.</p></details>
+  </section>
+
+  <!-- 4 -->
+  <section class="ch" data-id="euler" data-title="Three rotations suffice" data-part="Foundations" hidden>
+    <p class="eyebrow">Step 4 · Universality for one qubit</p>
+    <h1>Any gate is three rotations</h1>
+    <p>Every single-qubit unitary can be written as</p>
+    <div class="eq">U = e<sup>iα</sup> R<sub>z</sub>(β) R<sub>y</sub>(γ) R<sub>z</sub>(δ) &nbsp; ⟺ &nbsp; q = (cos β/2 + <span class="qk">k</span> sin β/2)(cos γ/2 + <span class="qj">j</span> sin γ/2)(cos δ/2 + <span class="qk">k</span> sin δ/2)<small>This is the Z-Y-Z Euler-angle decomposition (Nielsen &amp; Chuang, Theorem 4.1). Real hardware often implements R<sub>z</sub> for free in software and calibrates only one other pulse.</small></div>
+    <p>Multiplying out the right-hand side gives a quaternion whose components can be read straight back as angles:</p>
+    <div class="eq" style="font-size:17px">a = cos(γ/2)cos((β+δ)/2), &nbsp; d = cos(γ/2)sin((β+δ)/2), &nbsp; c = sin(γ/2)cos((β−δ)/2), &nbsp; b = −sin(γ/2)sin((β−δ)/2)</div>
+    <div class="bench">
+      <div class="bench-head"><h3>Match the mystery gate</h3><span class="tag">Interactive</span></div>
+      <canvas id="cv-euler" data-h="380" tabindex="0" aria-label="Bloch sphere with target frame and your frame"></canvas>
+      <div class="legend"><span style="--sw:var(--muted)">dashed: where the mystery gate sends the x, y, z axes</span><span style="--sw:var(--accent)">solid: where your three rotations send them</span></div>
+      <div class="row">
+        <label class="ctl" for="eu-b">β (first Z, applied last) <b id="eu-b-v"></b><input id="eu-b" type="range" step="0.1" min="-180" max="180" value="0"></label>
+        <label class="ctl" for="eu-g">γ (Y) <b id="eu-g-v"></b><input id="eu-g" type="range" step="0.1" min="0" max="180" value="0"></label>
+        <label class="ctl" for="eu-d">δ (last Z, applied first) <b id="eu-d-v"></b><input id="eu-d" type="range" step="0.1" min="-180" max="180" value="0"></label>
+      </div>
+      <div class="row"><button class="btn" id="eu-new">New mystery gate</button><button class="btn primary" id="eu-solve">Solve with quaternions</button><span id="eu-badge"></span></div>
+      <div class="readout" id="eu-read"></div>
+    </div>
+    <p>Set γ to 0 and the two Z rotations merge into one: only β + δ matters. That is gimbal lock, the same singularity that plagues Euler angles in aircraft and games. The quaternion itself never has this problem; only its three-angle description does.</p>
+    <details class="check"><summary>Check yourself</summary><p>Find Euler angles for the Hadamard gate. <em>Answer:</em> H ∝ R<sub>z</sub>(0) R<sub>y</sub>(90°) R<sub>z</sub>(180°). Check it: <span class="m">(cos 45° + <span class="qj">j</span> sin 45°)<span class="qk">k</span> = (<span class="qk">k</span> + <span class="qi">i</span>)/√2</span>.</p></details>
+  </section>
+
+  <!-- 5 -->
+  <section class="ch" data-id="interference" data-title="Interference" data-part="Foundations" hidden>
+    <p class="eyebrow">Step 5 · Phase becomes probability</p>
+    <h1>How a hidden phase becomes a visible answer</h1>
+    <p>Measurement along z cannot see φ, the azimuth. Every quantum algorithm therefore ends by rotating phase information onto the z-axis. The simplest example is the circuit <span class="mono">H → P(φ) → H</span>, a quantum version of the Mach–Zehnder interferometer:</p>
+    <ol class="plain">
+      <li>H tips |0⟩ onto the equator at |+⟩. Both paths now have equal weight.</li>
+      <li>The phase gate P(φ) = diag(1, e<sup>iφ</sup>) turns the equator by φ. Probabilities are unchanged, since the vector stays on the equator.</li>
+      <li>H swaps the x and z axes. The hidden angle φ is now a tilt that measurement can see.</li>
+    </ol>
+    <div class="eq">P(0) = cos²(φ/2)<small>Constructive interference at φ = 0, destructive at φ = 180°.</small></div>
+    <div class="bench">
+      <div class="bench-head"><h3>Interferometer on the sphere</h3><span class="tag">Interactive</span></div>
+      <div class="split">
+        <canvas id="cv-intf" data-h="360" tabindex="0" aria-label="Bloch sphere tracing the interferometer circuit"></canvas>
+        <div class="stack">
+          <label class="ctl" for="if-ph">Phase φ <b id="if-ph-v"></b><input id="if-ph" type="range" min="0" max="360" value="120"></label>
+          <label class="chk" for="if-global"><input type="checkbox" id="if-global"> Apply the phase to both amplitudes (global)</label>
+          <div class="row"><button class="btn primary" id="if-run">Run circuit</button></div>
+          <ol class="steps" id="if-steps"><li>|0⟩</li><li>H</li><li>P(φ)</li><li>H</li><li>measure</li></ol>
+          <svg id="if-plot" viewBox="0 0 320 170" width="100%" role="img" aria-label="Plot of P(0) against φ"></svg>
+        </div>
+      </div>
+      <div class="readout" id="if-read"></div>
+    </div>
+    <p>Tick the “global” box and the phase multiplies both amplitudes. The quaternion of the middle step becomes 1, the sphere does not move, and P(0) is always 1. A relative phase is a rotation about z; a global phase is no rotation at all.</p>
+    <details class="check"><summary>Check yourself</summary><p>Using quaternions, show that H·Z·H acts like X. Then explain why the interferometer with φ = 180° always outputs 1. <em>Answer:</em> P(180°) = Z, and HZH = X up to phase. So the circuit is just X applied to |0⟩.</p></details>
+  </section>
+
+  <!-- 6 -->
+  <section class="ch" data-id="noise" data-title="Noise and the Bloch ball" data-part="Real qubits" hidden>
+    <p class="eyebrow">Step 6 · Decoherence</p>
+    <h1>Real qubits sink into the ball</h1>
+    <p>A qubit that interacts with its environment is no longer a pure state. It is described by a density matrix</p>
+    <div class="eq">ρ = ½ (I + x σ<sub>x</sub> + y σ<sub>y</sub> + z σ<sub>z</sub>), &nbsp; |<b>r</b>| ≤ 1<small>Pure states sit on the surface. Mixed states fill the inside, the Bloch ball. The centre is the maximally mixed state I/2.</small></div>
+    <p>Gates still act by the quaternion sandwich: <span class="m">UρU† ⟷ <b>r</b> ↦ q<b>r</b>q*</span>. Noise, however, is not a rotation. It shrinks and shifts the ball. Two time scales describe a real device:</p>
+    <ul class="plain">
+      <li><b>T₁, energy relaxation:</b> the qubit decays toward |0⟩, so <span class="m">z(t) = 1 − (1 − z₀)e<sup>−t/T₁</sup></span>.</li>
+      <li><b>T₂, dephasing:</b> the equatorial part shrinks, <span class="m">x + iy → (x₀ + iy₀) e<sup>−t/T₂</sup> e<sup>iΔt</sup></span>, while a detuning Δ makes it precess. Physics requires T₂ ≤ 2T₁.</li>
+    </ul>
+    <div class="bench">
+      <div class="bench-head"><h3>Relaxation and dephasing</h3><span class="tag">Interactive</span></div>
+      <div class="split">
+        <canvas id="cv-noise" data-h="360" tabindex="0" aria-label="Bloch ball showing a decaying qubit"></canvas>
+        <div class="stack">
+          <label class="ctl" for="nz-th">Start angle θ₀ <b id="nz-th-v"></b><input id="nz-th" type="range" min="0" max="180" value="90"></label>
+          <label class="ctl" for="nz-t1">T₁ <b id="nz-t1-v"></b><input id="nz-t1" type="range" min="5" max="100" value="60"></label>
+          <label class="ctl" for="nz-t2">T₂ <b id="nz-t2-v"></b><input id="nz-t2" type="range" min="2" max="200" value="30"></label>
+          <label class="ctl" for="nz-d">Detuning Δ (turns per 100 μs) <b id="nz-d-v"></b><input id="nz-d" type="range" min="0" max="8" step="0.5" value="3"></label>
+          <label class="ctl" for="nz-t">Time t <b id="nz-t-v"></b><input id="nz-t" type="range" min="0" max="200" value="40"></label>
+          <button class="btn primary" id="nz-play">Play</button>
+        </div>
+      </div>
+      <div class="readout" id="nz-read"></div>
+    </div>
+    <h2>Spin echo: undoing dephasing with a half-turn</h2>
+    <p>In an ensemble, or a qubit whose frequency drifts from shot to shot, each member precesses at a slightly different rate. The spins fan out and the average Bloch vector shrinks, even though no single spin has lost anything. Erwin Hahn’s 1950 trick: at time τ apply a 180° pulse about x, the quaternion <span class="qi">i</span>. It maps each azimuth φ to −φ. Fast spins are now behind, slow ones ahead, and at time 2τ they all line up again.</p>
+    <div class="bench">
+      <div class="bench-head"><h3>Hahn echo with nine spins</h3><span class="tag">Interactive</span></div>
+      <div class="split">
+        <canvas id="cv-echo" data-h="340" tabindex="0" aria-label="Nine spins fanning out and refocusing"></canvas>
+        <div class="stack">
+          <label class="ctl" for="ec-t">Time t (τ = 50) <b id="ec-t-v"></b><input id="ec-t" type="range" min="0" max="120" value="35"></label>
+          <label class="chk" for="ec-on"><input type="checkbox" id="ec-on" checked> <span>Apply the X pulse (quaternion <span class="qi">i</span>) at t = τ</span></label>
+          <label class="ctl" for="ec-spread">Frequency spread <b id="ec-spread-v"></b><input id="ec-spread" type="range" min="0" max="100" value="60"></label>
+          <button class="btn primary" id="ec-play">Play</button>
+          <div class="readout" id="ec-read"></div>
+        </div>
+      </div>
+    </div>
+    <details class="check"><summary>Check yourself</summary><p>Why can no sequence of gates bring a vector from the centre of the ball back to the surface? <em>Answer:</em> gates act by <span class="m">q<b>r</b>q*</span>, which preserves length. Restoring purity needs a non-unitary step, such as measurement or a fresh qubit (Step 12).</p></details>
+  </section>
+
+  <!-- 7 -->
+  <section class="ch" data-id="entangle" data-title="Entanglement" data-part="Many qubits" hidden>
+    <p class="eyebrow">Step 7 · Two qubits</p>
+    <h1>When the spheres go hollow</h1>
+    <p>Two qubits have four amplitudes, <span class="m">a₀₀|00⟩ + a₀₁|01⟩ + a₁₀|10⟩ + a₁₁|11⟩</span>. If the state is a product, each qubit has its own point on its own sphere. If it is <b>entangled</b>, neither qubit has a pure state of its own. Each sphere shows a <b>reduced</b> Bloch vector strictly inside the ball. For any pure two-qubit state the shrinkage measures the entanglement exactly:</p>
+    <div class="eq">|<b>r</b><sub>A</sub>|² = |<b>r</b><sub>B</sub>|² = 1 − C², &nbsp; C = 2 |a₀₀a₁₁ − a₀₁a₁₀|<small>C is the concurrence (Wootters, 1998): 0 for product states, 1 for Bell states.</small></div>
+    <div class="bench">
+      <div class="bench-head"><h3>Two-qubit lab</h3><span class="tag">Spheres turn together</span></div>
+      <div class="spheres">
+        <figure><canvas id="cv-entA" data-h="270" tabindex="0" aria-label="Qubit A"></canvas><figcaption><b>Qubit A</b> · <span id="en-lenA"></span></figcaption></figure>
+        <figure><canvas id="cv-entB" data-h="270" tabindex="0" aria-label="Qubit B"></canvas><figcaption><b>Qubit B</b> · <span id="en-lenB"></span></figcaption></figure>
+      </div>
+      <div class="cols">
+        <div class="stack"><div class="hint">On qubit A</div><div class="btnset" id="en-gA"></div></div>
+        <div class="stack"><div class="hint">On qubit B</div><div class="btnset" id="en-gB"></div></div>
+      </div>
+      <div class="row">
+        <label class="ctl" for="en-ang"><span>R<sub>y</sub> angle</span> <b id="en-ang-v"></b><input id="en-ang" type="range" min="0" max="180" value="90"></label>
+      </div>
+      <div class="btnset" id="en-two"></div>
+      <div class="hint">Presets</div>
+      <div class="btnset" id="en-presets"></div>
+      <div class="amps" id="en-amps"></div>
+      <div class="readout" id="en-read"></div>
+    </div>
+    <p>Try this: make the Bell state Φ⁺, then press “Measure A”. Before the measurement both spheres are empty. After it, A jumps to a pole and B jumps to the <em>same</em> pole, wherever B is. Then try local gates on a Bell state. They rotate the hidden correlations but never change C.</p>
+    <h2>The quaternion view of two qubits</h2>
+    <p>A pair of local gates is a pair of unit quaternions (p, q). The pair acts on ℝ⁴ by <span class="m">v ↦ p v q*</span>, which is how every rotation of four-dimensional space arises (SU(2) × SU(2) double-covers SO(4)). In the so-called magic basis, every two-qubit state becomes a vector in ℂ⁴ on which local gates act as these real 4D rotations. The concurrence is a quantity that those rotations cannot change. That is a geometric proof that local operations cannot create entanglement.</p>
+    <details class="check"><summary>Check yourself</summary><p>Apply R<sub>y</sub>(θ) to A, then CNOT. What is C? <em>Answer:</em> the state is cos(θ/2)|00⟩ + sin(θ/2)|11⟩, so C = 2 cos(θ/2) sin(θ/2) = sin θ. It is maximal at θ = 90°.</p></details>
+  </section>
+
+  <!-- 8 -->
+  <section class="ch" data-id="kickback" data-title="Phase kickback" data-part="Many qubits" hidden>
+    <p class="eyebrow">Step 8 · Controlled gates and Deutsch’s algorithm</p>
+    <h1>The target kicks the phase back to the control</h1>
+    <p>A controlled gate applies U to the target only when the control is |1⟩. If the target is an eigenvector of U, with <span class="m">U|u⟩ = e<sup>iλ</sup>|u⟩</span>, the target never changes. The phase instead lands on the control’s |1⟩ branch:</p>
+    <div class="eq">(|0⟩ + |1⟩)|u⟩ &nbsp;→&nbsp; (|0⟩ + e<sup>iλ</sup>|1⟩)|u⟩<small>On the control’s sphere this is a rotation by λ about z, the quaternion cos(λ/2) + k sin(λ/2). This is the engine of phase estimation, Shor’s algorithm and the quantum Fourier transform.</small></div>
+    <div class="bench">
+      <div class="bench-head"><h3>Kickback with a controlled phase</h3><span class="tag">Interactive</span></div>
+      <div class="spheres">
+        <figure><canvas id="cv-kbA" data-h="250" tabindex="0" aria-label="Control qubit"></canvas><figcaption><b>Control</b>, starts at |+⟩</figcaption></figure>
+        <figure><canvas id="cv-kbB" data-h="250" tabindex="0" aria-label="Target qubit"></canvas><figcaption><b>Target</b></figcaption></figure>
+      </div>
+      <div class="row">
+        <label class="ctl" for="kb-lam">λ in controlled-P(λ) <b id="kb-lam-v"></b><input id="kb-lam" type="range" min="0" max="360" value="90"></label>
+        <div class="btnset" id="kb-tgt"></div>
+      </div>
+      <div class="readout" id="kb-read"></div>
+    </div>
+    <h2>Deutsch’s algorithm</h2>
+    <p>You are given a black box for a function f: {0,1} → {0,1}. It is either <b>constant</b> (f(0) = f(1)) or <b>balanced</b> (f(0) ≠ f(1)). Classically you must query it twice. David Deutsch showed in 1985 that one quantum query suffices. Put the target in |−⟩, an eigenvector of X with eigenvalue −1. The oracle |x⟩|y⟩ → |x⟩|y ⊕ f(x)⟩ then kicks the phase (−1)<sup>f(x)</sup> back onto the control.</p>
+    <div class="bench">
+      <div class="bench-head"><h3>Deutsch, step by step</h3><span class="tag">Interactive</span></div>
+      <div class="row"><span class="hint">Hidden function:</span><div class="btnset" id="dj-f"></div></div>
+      <ol class="steps" id="dj-steps"></ol>
+      <div class="spheres">
+        <figure><canvas id="cv-djA" data-h="250" tabindex="0" aria-label="Query qubit"></canvas><figcaption><b>Query qubit x</b></figcaption></figure>
+        <figure><canvas id="cv-djB" data-h="250" tabindex="0" aria-label="Answer qubit"></canvas><figcaption><b>Answer qubit y</b></figcaption></figure>
+      </div>
+      <div class="row"><button class="btn" id="dj-back">← Back</button><button class="btn primary" id="dj-next">Next step →</button><button class="btn" id="dj-reset">Restart</button></div>
+      <div class="readout wrap" id="dj-read"></div>
+    </div>
+    <p>Look at the query qubit after the oracle. For a balanced f it has been turned 180° about z, from |+⟩ to |−⟩: the quaternion <span class="qk">k</span>. For f = 1 the whole state is multiplied by −1, the quaternion −1. That is a global phase, and the sphere does not move. The double cover from the quaternion course is exactly why the constant functions look identical.</p>
+    <details class="check"><summary>Check yourself</summary><p>Why must the answer qubit start in |−⟩ and not |+⟩? <em>Answer:</em> |+⟩ is an eigenvector of X with eigenvalue +1, so the kickback phase would always be +1 and no information reaches the query qubit.</p></details>
+  </section>
+
+  <!-- 9 -->
+  <section class="ch" data-id="teleport" data-title="Teleportation" data-part="Many qubits" hidden>
+    <p class="eyebrow">Step 9 · Three qubits</p>
+    <h1>Teleportation, corrected by the quaternion group</h1>
+    <p>Alice holds an unknown qubit |ψ⟩. She and Bob share a Bell pair. Bennett and colleagues showed in 1993 that Alice can transfer |ψ⟩ to Bob by sending him two classical bits. No qubit travels, and nothing goes faster than light, because Bob’s qubit is useless until the bits arrive.</p>
+    <p>The quaternion picture makes the last step transparent. After Alice’s measurement, Bob holds |ψ⟩ turned by a half-turn about x, y, z or not at all. Those four possibilities are the quaternions 1, <span class="qi">i</span>, <span class="qj">j</span>, <span class="qk">k</span>. Together with their negatives they form Hamilton’s quaternion group Q₈. Alice’s two bits tell Bob which element to undo.</p>
+    <div class="bench">
+      <div class="bench-head"><h3>Teleport a state</h3><span class="tag">Interactive</span></div>
+      <div class="row">
+        <label class="ctl" for="tp-th">State to send: θ <b id="tp-th-v"></b><input id="tp-th" type="range" min="0" max="180" value="65"></label>
+        <label class="ctl" for="tp-ph">φ <b id="tp-ph-v"></b><input id="tp-ph" type="range" min="0" max="360" value="40"></label>
+        <label class="ctl" for="tp-force" style="max-width:220px">Measurement outcome<select id="tp-force"><option value="r">Random</option><option value="0">m₀m₁ = 00</option><option value="1">m₀m₁ = 01</option><option value="2">m₀m₁ = 10</option><option value="3">m₀m₁ = 11</option></select></label>
+      </div>
+      <ol class="steps" id="tp-steps"></ol>
+      <div class="spheres">
+        <figure><canvas id="cv-tp0" data-h="230" tabindex="0" aria-label="Alice's message qubit"></canvas><figcaption><b>q₀</b> Alice’s |ψ⟩</figcaption></figure>
+        <figure><canvas id="cv-tp1" data-h="230" tabindex="0" aria-label="Alice's half of the Bell pair"></canvas><figcaption><b>q₁</b> Alice’s half</figcaption></figure>
+        <figure><canvas id="cv-tp2" data-h="230" tabindex="0" aria-label="Bob's qubit"></canvas><figcaption><b>q₂</b> Bob · dashed = |ψ⟩</figcaption></figure>
+      </div>
+      <div class="row"><button class="btn" id="tp-back">← Back</button><button class="btn primary" id="tp-next">Next step →</button><button class="btn" id="tp-reset">Restart</button></div>
+      <div class="readout wrap" id="tp-read"></div>
+    </div>
+    <div class="tbl"><table class="data">
+      <tr><th>Bits m₀m₁</th><th>Bob holds</th><th>Correction</th><th>Quaternion</th></tr>
+      <tr><td class="mono">00</td><td>|ψ⟩</td><td>nothing</td><td class="m">1</td></tr>
+      <tr><td class="mono">01</td><td>X|ψ⟩</td><td>X</td><td class="m"><span class="qi">i</span></td></tr>
+      <tr><td class="mono">10</td><td>Z|ψ⟩</td><td>Z</td><td class="m"><span class="qk">k</span></td></tr>
+      <tr><td class="mono">11</td><td>XZ|ψ⟩ ∝ Y|ψ⟩</td><td>X then Z</td><td class="m"><span class="qk">k</span><span class="qi">i</span> = <span class="qj">j</span></td></tr>
+    </table></div>
+    <details class="check"><summary>Check yourself</summary><p>Before Alice measures, what does Bob’s sphere show, whatever |ψ⟩ is? <em>Answer:</em> the centre. Bob’s qubit is maximally mixed, so it carries no information about |ψ⟩ until the two bits arrive.</p></details>
+  </section>
+
+  <!-- 10 -->
+  <section class="ch" data-id="grover" data-title="Grover search" data-part="Algorithms" hidden>
+    <p class="eyebrow">Step 10 · Search</p>
+    <h1>Grover’s algorithm is a rotation</h1>
+    <p>Search N = 2ⁿ items for one marked item w. Classically this takes about N/2 looks; Lov Grover (1996) needs only about (π/4)√N. The state never leaves the plane spanned by |w⟩ and |s′⟩, the uniform superposition of the unmarked items. A plane spanned by two states behaves exactly like a qubit, so the whole algorithm runs on one <b>effective Bloch sphere</b>, with |s′⟩ at the north pole and |w⟩ at the south.</p>
+    <ul class="plain">
+      <li><b>Oracle</b> flips the sign of |w⟩. On the effective sphere that is a half-turn about z: the quaternion <span class="qk">k</span>.</li>
+      <li><b>Diffusion</b> reflects about the start state |s⟩. That is a half-turn about the axis of |s⟩, the pure quaternion <span class="m"><b>s</b> = sin 2θ <span class="qi">i</span> + cos 2θ <span class="qk">k</span></span>, where sin θ = 1/√N.</li>
+      <li>Two half-turns about axes at angle 2θ make one rotation by 4θ: <span class="m"><b>s</b><span class="qk">k</span> = −(cos 2θ + <span class="qj">j</span> sin 2θ)</span>. Hamilton described exactly this, a rotation as the product of two reflections.</li>
+    </ul>
+    <div class="bench">
+      <div class="bench-head"><h3>Grover on the effective sphere</h3><span class="tag">Interactive</span></div>
+      <div class="row">
+        <label class="ctl" for="gr-n">Qubits n <b id="gr-n-v"></b><input id="gr-n" type="range" min="2" max="8" value="5"></label>
+        <label class="ctl" for="gr-w" style="max-width:180px">Marked item w<input id="gr-w" type="number" min="0" value="13"></label>
+      </div>
+      <div class="split">
+        <canvas id="cv-grover" data-h="340" tabindex="0" aria-label="Effective Bloch sphere for Grover's algorithm"></canvas>
+        <div class="stack">
+          <svg id="gr-bars" viewBox="0 0 320 170" width="100%" role="img" aria-label="Amplitudes of all items"></svg>
+          <div class="btnset"><button class="btn" id="gr-oracle">Oracle (<span class="qk">k</span>)</button><button class="btn" id="gr-diff">Diffusion (<b>s</b>)</button><button class="btn primary" id="gr-iter">Full iteration</button><button class="btn" id="gr-reset">Reset</button></div>
+        </div>
+      </div>
+      <div class="readout" id="gr-read"></div>
+    </div>
+    <p>Keep iterating past the optimum and the vector overshoots the south pole: the success probability goes back down. Grover search is a rotation, and a rotation does not stop by itself. You have to know when to measure.</p>
+    <details class="check"><summary>Check yourself</summary><p>For N = 4, how many iterations find w with certainty? <em>Answer:</em> sin θ = 1/2, so θ = 30°. One iteration takes the angle from θ to 3θ = 90°, and P = sin²(90°) = 1.</p></details>
+  </section>
+
+  <!-- 11 -->
+  <section class="ch" data-id="synthesis" data-title="Gate synthesis" data-part="Algorithms" hidden>
+    <p class="eyebrow">Step 11 · Compiling for real hardware</p>
+    <h1>Approximating any rotation with H and T</h1>
+    <p>Error-corrected quantum computers can perform only a finite set of gates reliably, typically Clifford gates plus T. Yet algorithms ask for arbitrary rotations such as R<sub>z</sub>(0.3). The solution is to search for a word in H and T whose quaternion is close to the target. H and T generate a dense subgroup of the unit quaternions, so the words get arbitrarily close.</p>
+    <ul class="plain">
+      <li><b>Solovay–Kitaev</b> (1990s) guarantees sequences of length O(log<sup>c</sup>(1/ε)) for accuracy ε, with c close to 4 in the standard Dawson–Nielsen version.</li>
+      <li><b>Number-theoretic synthesis.</b> Clifford+T matrices have entries in the ring ℤ[1/√2, i] (Kliuchnikov, Maslov and Mosca, 2013). Ross and Selinger (2016) solve the resulting Diophantine equations to get z-rotations with about 3 log₂(1/ε) T gates. That is essentially optimal.</li>
+    </ul>
+    <div class="bench">
+      <div class="bench-head"><h3>Brute-force compiler</h3><span class="tag" id="sy-status">Interactive</span></div>
+      <div class="row">
+        <label class="ctl" for="sy-ang"><span>Target R<sub>z</sub> angle</span> <b id="sy-ang-v"></b><input id="sy-ang" type="range" min="1" max="180" value="17"></label>
+        <label class="ctl" for="sy-len">Max word length <b id="sy-len-v"></b><input id="sy-len" type="range" min="2" max="56" step="2" value="36"></label>
+        <button class="btn" id="sy-rand">Random target axis</button>
+      </div>
+      <div class="split">
+        <canvas id="cv-synth" data-h="340" tabindex="0" aria-label="Target rotation frame against approximation"></canvas>
+        <svg id="sy-plot" viewBox="0 0 320 200" width="100%" role="img" aria-label="Best error against word length"></svg>
+      </div>
+      <div class="legend"><span style="--sw:var(--muted)">dashed: target frame</span><span style="--sw:var(--accent)">solid: best H/T word</span></div>
+      <div class="readout wrap" id="sy-read"></div>
+    </div>
+    <p>The table behind this demo multiplies quaternions breadth-first: 1, then every H and T applied to it, and so on, merging duplicates (q and −q count as the same rotation). It keeps 50,000 distinct rotations. The compiler then tries every product of two table words (a meet-in-the-middle search), which covers about 2.5 billion candidates in a fraction of a second. Watch the error fall roughly exponentially with word length, the behaviour the theorems promise.</p>
+    <details class="check"><summary>Check yourself</summary><p>Why does the search never need the word “HH”? <em>Answer:</em> H is a half-turn, so <span class="m">h² = −1</span>: HH is the identity rotation. Similarly TTTTTTTT is the quaternion −1.</p></details>
+  </section>
+
+  <!-- 12 -->
+  <section class="ch" data-id="qec" data-title="Error correction" data-part="Algorithms" hidden>
+    <p class="eyebrow">Step 12 · Protecting a qubit</p>
+    <h1>Catching a continuous error with a discrete question</h1>
+    <p>Errors on a real qubit are small rotations by arbitrary angles, not neat bit flips. The three-qubit bit-flip code shows the key idea of quantum error correction. Measuring the right parities forces any small x-rotation to become either “no error” or “a full X error”, and the second can be undone exactly.</p>
+    <ol class="plain">
+      <li><b>Encode:</b> α|0⟩ + β|1⟩ → α|000⟩ + β|111⟩ using two CNOTs. This is not three copies, which the no-cloning theorem forbids.</li>
+      <li><b>Error:</b> one qubit is rotated by R<sub>x</sub>(ε), the quaternion <span class="m">cos(ε/2) + <span class="qi">i</span> sin(ε/2)</span>.</li>
+      <li><b>Syndrome:</b> measure the parities Z₀Z₁ and Z₁Z₂. They reveal where an error is but nothing about α or β.</li>
+      <li><b>Correct:</b> apply X, the quaternion <span class="qi">i</span>, to the qubit the syndrome points to.</li>
+    </ol>
+    <div class="bench">
+      <div class="bench-head"><h3>Three-qubit code</h3><span class="tag">Interactive</span></div>
+      <div class="row">
+        <label class="ctl" for="qe-th">Logical state θ <b id="qe-th-v"></b><input id="qe-th" type="range" min="0" max="180" value="60"></label>
+        <label class="ctl" for="qe-ph">φ <b id="qe-ph-v"></b><input id="qe-ph" type="range" min="0" max="360" value="30"></label>
+        <label class="ctl" for="qe-eps">Error angle ε <b id="qe-eps-v"></b><input id="qe-eps" type="range" min="0" max="180" value="70"></label>
+        <label class="ctl" for="qe-where" style="max-width:220px">Error on<select id="qe-where"><option value="0">qubit 0</option><option value="1" selected>qubit 1</option><option value="2">qubit 2</option><option value="01">qubits 0 and 1</option><option value="n">no error</option></select></label>
+      </div>
+      <ol class="steps" id="qe-steps"></ol>
+      <div class="split">
+        <figure style="margin:0"><canvas id="cv-qeL" data-h="320" tabindex="0" aria-label="Logical qubit sphere"></canvas><figcaption class="hint" style="text-align:center">Logical qubit · dashed = original |ψ⟩</figcaption></figure>
+        <div class="stack">
+          <div class="spheres" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+            <figure><canvas id="cv-qe0" data-h="120" tabindex="0" aria-label="Physical qubit 0"></canvas><figcaption>q₀</figcaption></figure>
+            <figure><canvas id="cv-qe1" data-h="120" tabindex="0" aria-label="Physical qubit 1"></canvas><figcaption>q₁</figcaption></figure>
+            <figure><canvas id="cv-qe2" data-h="120" tabindex="0" aria-label="Physical qubit 2"></canvas><figcaption>q₂</figcaption></figure>
+          </div>
+          <div class="hint">Weight in each syndrome sector</div>
+          <div class="hist" id="qe-sect"></div>
+        </div>
+      </div>
+      <div class="row"><button class="btn" id="qe-back">← Back</button><button class="btn primary" id="qe-next">Next step →</button><button class="btn" id="qe-reset">Restart</button></div>
+      <div class="readout wrap" id="qe-read"></div>
+    </div>
+    <p>Notice the three small spheres after encoding. Each physical qubit sits on the z-axis inside its ball, so no single qubit holds the phase φ. The information lives in the correlations, which is exactly why a local error cannot destroy it. Choose “qubits 0 and 1” to see the code fail: the majority vote picks the wrong qubit, and the logical state comes out turned by <span class="qi">i</span>, a logical X error. Shor’s 1995 nine-qubit code adds the phase-flip version to protect against all errors, and today’s surface codes scale the same idea up.</p>
+    <details class="check"><summary>Check yourself</summary><p>With an error angle ε on one qubit, what is the chance the syndrome reports “no error”? <em>Answer:</em> cos²(ε/2). Either way the corrected output is perfect.</p></details>
+  </section>
+
+  <!-- 13 -->
+  <section class="ch" data-id="review" data-title="Review and quiz" data-part="Algorithms" hidden>
+    <p class="eyebrow">Step 13 · Consolidate</p>
+    <h1>Review and quiz</h1>
+    <div class="cols">
+      <div class="bench"><h3>On the sphere</h3><ul class="plain">
+        <li>State ↔ point; mixed state ↔ point inside the ball.</li>
+        <li>Gate ↔ rotation; measurement ↔ projection onto an axis, P = (1 + <b>r</b>·<b>n</b>)/2.</li>
+        <li>Noise shrinks the ball; entanglement empties each qubit’s sphere.</li>
+        <li>Grover’s algorithm is a rotation by 4θ on an effective sphere.</li>
+      </ul></div>
+      <div class="bench"><h3>In quaternions</h3><ul class="plain">
+        <li>Gate = unit quaternion; circuit = product, last gate on the left.</li>
+        <li>X, Y, Z = <span class="qi">i</span>, <span class="qj">j</span>, <span class="qk">k</span>; H = (<span class="qi">i</span>+<span class="qk">k</span>)/√2; R<sub><b>n</b></sub>(θ) = cos θ/2 + <b>n</b> sin θ/2.</li>
+        <li>q and −q are the same rotation. The sign is a global phase until a gate is controlled.</li>
+        <li>Teleportation corrections are the quaternion group {±1, ±<span class="qi">i</span>, ±<span class="qj">j</span>, ±<span class="qk">k</span>}.</li>
+      </ul></div>
+    </div>
+    <div class="quiz" id="quiz"></div>
+    <div class="row"><button class="btn primary" id="quiz-check">Check all answers</button><button class="btn" id="quiz-reset">Clear</button><span class="score" id="quiz-score"></span></div>
+    <h2>Further reading</h2>
+    <ul class="plain">
+      <li>M. A. Nielsen and I. L. Chuang, <i>Quantum Computation and Quantum Information</i>, Cambridge, 10th anniversary ed., 2010. Chapters 1, 2, 4, 8 and 10.</li>
+      <li>N. D. Mermin, <i>Quantum Computer Science: An Introduction</i>, Cambridge, 2007.</li>
+      <li>J. B. Kuipers, <i>Quaternions and Rotation Sequences</i>, Princeton, 1999.</li>
+      <li>W. K. Wootters, “Entanglement of formation of an arbitrary state of two qubits”, <i>Physical Review Letters</i> 80, 1998.</li>
+      <li>N. J. Ross and P. Selinger, “Optimal ancilla-free Clifford+T approximation of z-rotations”, <i>Quantum Information and Computation</i> 16, 2016.</li>
+      <li>E. L. Hahn, “Spin echoes”, <i>Physical Review</i> 80, 1950.</li>
+    </ul>
+  </section>
+
+  <div class="pager" id="pager"></div>
+  </main>
+</div>
+
+<script>
+(function(){
+'use strict';
+// ===== core math: quaternions, complex 2x2, statevector simulator =====
+const PI = Math.PI, deg = PI/180, S2 = Math.SQRT1_2;
+const Q = {
+  mul:(a,b)=>[a[0]*b[0]-a[1]*b[1]-a[2]*b[2]-a[3]*b[3],
+              a[0]*b[1]+a[1]*b[0]+a[2]*b[3]-a[3]*b[2],
+              a[0]*b[2]-a[1]*b[3]+a[2]*b[0]+a[3]*b[1],
+              a[0]*b[3]+a[1]*b[2]-a[2]*b[1]+a[3]*b[0]],
+  conj:a=>[a[0],-a[1],-a[2],-a[3]],
+  norm:a=>Math.hypot(a[0],a[1],a[2],a[3]),
+  scale:(a,s)=>a.map(x=>x*s),
+  normalize:a=>{ const n=Math.hypot(a[0],a[1],a[2],a[3])||1; return a.map(x=>x/n); },
+  aa:(u,th)=>{ const n=Math.hypot(u[0],u[1],u[2])||1, s=Math.sin(th/2); return [Math.cos(th/2), u[0]/n*s, u[1]/n*s, u[2]/n*s]; },
+  rot:(q,v)=>Q.mul(Q.mul(q,[0,v[0],v[1],v[2]]),Q.conj(q)).slice(1),
+  dot:(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2]+a[3]*b[3],
+  dist:(a,b)=>2*Math.acos(Math.min(1,Math.abs(Q.dot(a,b)))), // rotation angle between
+  slerp:(a,b,t)=>{ let d=Q.dot(a,b); if(d<0){ b=Q.scale(b,-1); d=-d; }
+    if(d>0.9995) return Q.normalize(a.map((x,i)=>x+(b[i]-x)*t));
+    const O=Math.acos(d), s=Math.sin(O); return a.map((x,i)=>(Math.sin((1-t)*O)*x+Math.sin(t*O)*b[i])/s); },
+  axisAngle:q=>{ let w=Math.max(-1,Math.min(1,q[0])); const s=Math.hypot(q[1],q[2],q[3]); const th=2*Math.atan2(s,w);
+    return {axis: s>1e-9 ? [q[1]/s,q[2]/s,q[3]/s] : [0,0,1], angle: th}; },
+  // ZYZ: q = Rz(b) Ry(g) Rz(d)
+  zyz:q=>{ const [a,b,c,d]=q; const g=2*Math.atan2(Math.hypot(b,c), Math.hypot(a,d));
+    const sig=Math.atan2(d,a), del=Math.atan2(-b,c); return {beta:sig+del, gamma:g, delta:sig-del}; },
+  fromZYZ:(b,g,d)=>Q.mul(Q.mul(Q.aa([0,0,1],b),Q.aa([0,1,0],g)),Q.aa([0,0,1],d)),
+};
+// complex helpers: [re, im]
+const C = {
+  mul:(a,b)=>[a[0]*b[0]-a[1]*b[1], a[0]*b[1]+a[1]*b[0]],
+  add:(a,b)=>[a[0]+b[0], a[1]+b[1]],
+  exp:t=>[Math.cos(t), Math.sin(t)],
+  abs2:a=>a[0]*a[0]+a[1]*a[1],
+};
+// SU(2) matrix of a unit quaternion: U = aI - i(b sx + c sy + d sz)
+function suOf(q){ const [a,b,c,d]=q; return [[a,-d],[-c,-b],[c,-b],[a,d]]; } // u00,u01,u10,u11
+function phased(M, ph){ return M.map(z=>C.mul(z,C.exp(ph))); }
+function mat2mul(A,B){ // A·B, entries u00,u01,u10,u11
+  return [C.add(C.mul(A[0],B[0]),C.mul(A[1],B[2])), C.add(C.mul(A[0],B[1]),C.mul(A[1],B[3])),
+          C.add(C.mul(A[2],B[0]),C.mul(A[3],B[2])), C.add(C.mul(A[2],B[1]),C.mul(A[3],B[3]))]; }
+
+// Named single-qubit gates: textbook matrix M = e^{i*phase} * SU(2)(q)
+const GATES = (()=>{
+  const g = {
+    I:{q:[1,0,0,0], ph:0, d:'identity'},
+    X:{q:[0,1,0,0], ph:PI/2, d:'180° about x'},
+    Y:{q:[0,0,1,0], ph:PI/2, d:'180° about y'},
+    Z:{q:[0,0,0,1], ph:PI/2, d:'180° about z'},
+    H:{q:[0,S2,0,S2], ph:PI/2, d:'180° about (x+z)/√2'},
+    S:{q:[S2,0,0,S2], ph:PI/4, d:'90° about z'},
+    'S†':{q:[S2,0,0,-S2], ph:-PI/4, d:'−90° about z'},
+    T:{q:[Math.cos(PI/8),0,0,Math.sin(PI/8)], ph:PI/8, d:'45° about z'},
+    'T†':{q:[Math.cos(PI/8),0,0,-Math.sin(PI/8)], ph:-PI/8, d:'−45° about z'},
+    '√X':{q:[S2,S2,0,0], ph:PI/4, d:'90° about x'},
+  };
+  for(const k in g) g[k].M = phased(suOf(g[k].q), g[k].ph);
+  return g;
+})();
+function rotGate(axis, th){ const q=Q.aa(axis,th); return {q, ph:0, M:suOf(q)}; }
+function phaseGate(lam){ const q=Q.aa([0,0,1],lam); return {q, ph:lam/2, M:phased(suOf(q),lam/2)}; }
+
+// ===== statevector simulator; qubit 0 is the LEFTMOST bit in kets =====
+class Sim{
+  constructor(n){ this.n=n; this.N=1<<n; this.re=new Float64Array(this.N); this.im=new Float64Array(this.N); this.re[0]=1; }
+  clone(){ const s=new Sim(this.n); s.re.set(this.re); s.im.set(this.im); return s; }
+  m(k){ return 1<<(this.n-1-k); }
+  reset(){ this.re.fill(0); this.im.fill(0); this.re[0]=1; return this; }
+  apply(k, M){ const m=this.m(k), re=this.re, im=this.im;
+    const [u0,u1,u2,u3]=M;
+    for(let i=0;i<this.N;i++){ if(i&m) continue; const j=i|m;
+      const ar=re[i], ai=im[i], br=re[j], bi=im[j];
+      re[i]=u0[0]*ar-u0[1]*ai+u1[0]*br-u1[1]*bi; im[i]=u0[0]*ai+u0[1]*ar+u1[0]*bi+u1[1]*br;
+      re[j]=u2[0]*ar-u2[1]*ai+u3[0]*br-u3[1]*bi; im[j]=u2[0]*ai+u2[1]*ar+u3[0]*bi+u3[1]*br; }
+    return this; }
+  cnot(c,t){ const mc=this.m(c), mt=this.m(t);
+    for(let i=0;i<this.N;i++){ if((i&mc) && !(i&mt)){ const j=i|mt;
+      let x=this.re[i]; this.re[i]=this.re[j]; this.re[j]=x; x=this.im[i]; this.im[i]=this.im[j]; this.im[j]=x; } }
+    return this; }
+  cphase(a,b,lam){ const ma=this.m(a), mb=this.m(b), c=Math.cos(lam), s=Math.sin(lam);
+    for(let i=0;i<this.N;i++) if((i&ma)&&(i&mb)){ const r=this.re[i], m=this.im[i]; this.re[i]=r*c-m*s; this.im[i]=r*s+m*c; }
+    return this; }
+  prob1(k){ const m=this.m(k); let p=0; for(let i=0;i<this.N;i++) if(i&m) p+=this.re[i]**2+this.im[i]**2; return p; }
+  project(pred){ let p=0; for(let i=0;i<this.N;i++){ if(pred(i)) p+=this.re[i]**2+this.im[i]**2; else { this.re[i]=0; this.im[i]=0; } }
+    const s=p>0?1/Math.sqrt(p):0; for(let i=0;i<this.N;i++){ this.re[i]*=s; this.im[i]*=s; } return p; }
+  measure(k, r=Math.random()){ const p1=this.prob1(k), o = r<p1 ? 1 : 0, m=this.m(k);
+    this.project(i=>((i&m)?1:0)===o); return o; }
+  parityProb(mask){ let p=0; for(let i=0;i<this.N;i++){ if(popc(i&mask)%2) p+=this.re[i]**2+this.im[i]**2; } return p; }
+  measureParity(mask, r=Math.random()){ const p1=this.parityProb(mask), o=r<p1?1:0; this.project(i=>popc(i&mask)%2===o); return o; }
+  bloch(k){ const m=this.m(k); let r00=0,r11=0,xr=0,xi=0;
+    for(let i=0;i<this.N;i++){ if(i&m) continue; const j=i|m;
+      r00+=this.re[i]**2+this.im[i]**2; r11+=this.re[j]**2+this.im[j]**2;
+      // rho01 = sum a_i conj(a_j)
+      xr+=this.re[i]*this.re[j]+this.im[i]*this.im[j]; xi+=this.im[i]*this.re[j]-this.re[i]*this.im[j]; }
+    return [2*xr, -2*xi, r00-r11]; }
+  amp(i){ return [this.re[i], this.im[i]]; }
+  ket(i){ return i.toString(2).padStart(this.n,'0'); }
+  // mask built from qubit indices
+  mask(...ks){ return ks.reduce((s,k)=>s|this.m(k),0); }
+}
+function popc(x){ let c=0; while(x){ c+=x&1; x>>=1; } return c; }
+// Bloch vector of a single-qubit pure state (alpha, beta)
+function blochOf(a,b){ const r01=C.mul(a,[b[0],-b[1]]); return [2*r01[0], -2*r01[1], C.abs2(a)-C.abs2(b)]; }
+
+// ===== Clifford+T search over words in H and T =====
+function cliffordT(maxNodes=60000){
+  const h=GATES.H.q, t=GATES.T.q;
+  const key=q=>{ let s=1; for(const x of q){ if(Math.abs(x)>1e-9){ s=x<0?-1:1; break; } } return q.map(x=>Math.round(x*s*1e6)).join(','); };
+  const nodes=[{q:[1,0,0,0], w:'', len:0, tc:0}]; const seen=new Set([key([1,0,0,0])]);
+  let frontier=[0];
+  while(frontier.length && nodes.length<maxNodes){
+    const next=[];
+    for(const idx of frontier){ const n=nodes[idx];
+      for(const [name,g] of [['H',h],['T',t]]){
+        if(name==='H' && n.w.endsWith('H')) continue;
+        const q=Q.mul(g,n.q); const k=key(q); if(seen.has(k)) continue; seen.add(k);
+        nodes.push({q, w:n.w+name, len:n.len+1, tc:n.tc+(name==='T'?1:0)}); next.push(nodes.length-1);
+        if(nodes.length>=maxNodes) break; }
+      if(nodes.length>=maxNodes) break; }
+    frontier=next; }
+  return nodes;
+}
+
+// ===== UI framework =====
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const reduceMotion = (()=>{ try{ return matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } })();
+let _cc={}; const css=v=>(v in _cc)?_cc[v]:(_cc[v]=getComputedStyle(document.documentElement).getPropertyValue(v).trim());
+function store(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } }
+function f(x,d=3){ const s=(+x).toFixed(d); return Number(s)===0 ? (0).toFixed(d) : s.replace('-','−'); }
+function fd(rad,d=1){ return f(rad/deg,d)+'°'; }
+function cHTML(z,d=3){ const [re,im]=z; const ar=Math.abs(re)<5e-4, ai=Math.abs(im)<5e-4;
+  if(ai) return f(re,d); if(ar) return (im<0?'−':'')+f(Math.abs(im),d)+'i';
+  return f(re,d)+(im<0?' − ':' + ')+f(Math.abs(im),d)+'i'; }
+function polarHTML(z){ const m=Math.hypot(z[0],z[1]); if(m<5e-4) return '0'; return f(m)+'∠'+Math.round(Math.atan2(z[1],z[0])/deg)+'°'; }
+function qHTML(q,d=3){ const U=['','<span class="qi">i</span>','<span class="qj">j</span>','<span class="qk">k</span>']; let o='', first=true;
+  q.forEach((c,i)=>{ if(Math.abs(c)<5e-4) return; const m=f(Math.abs(c),d); if(first){ o+=(c<0?'−':'')+m+U[i]; first=false; } else o+=(c<0?' − ':' + ')+m+U[i]; });
+  return first?'0':o; }
+function vHTML(v,d=3){ return '('+v.map(x=>f(x,d)).join(', ')+')'; }
+function vlen(v){ return Math.hypot(v[0],v[1],v[2]); }
+function vdot(a,b){ return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]; }
+function dirOf(th,ph){ return [Math.sin(th)*Math.cos(ph), Math.sin(th)*Math.sin(ph), Math.cos(th)]; }
+function ease(k){ return k<.5 ? 2*k*k : 1-Math.pow(-2*k+2,2)/2; }
+function tween(owner, dur, step, done){
+  if(owner._tw){ cancelAnimationFrame(owner._tw); owner._tw=null; if(owner._twDone){ const d=owner._twDone; owner._twDone=null; d(); } }
+  if(reduceMotion || dur<=0){ step(1); done&&done(); return; }
+  const t0=performance.now(); owner._twDone=done||null;
+  const fr=now=>{ const k=Math.min(1,(now-t0)/dur); try{ step(ease(k)); }catch(e){ console.error(e); }
+    if(k<1) owner._tw=requestAnimationFrame(fr); else { owner._tw=null; const d=owner._twDone; owner._twDone=null; d&&d(); } };
+  owner._tw=requestAnimationFrame(fr); }
+function stopTween(owner){ if(owner._tw){ cancelAnimationFrame(owner._tw); owner._tw=null; owner._twDone=null; } }
+
+function fitCanvas(cv){
+  const r=cv.getBoundingClientRect(); if(r.width<20) return null;
+  const dpr=Math.min(2, window.devicePixelRatio||1), h=parseFloat(cv.dataset.h)||300, w=r.width;
+  if(cv.style.height!==h+'px') cv.style.height=h+'px';
+  const W=Math.round(w*dpr), H=Math.round(h*dpr);
+  if(cv.width!==W || cv.height!==H){ cv.width=W; cv.height=H; }
+  const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h); return {ctx,w,h};
+}
+const ALL_VIEWS=[];
+function newCam(yaw=-0.62, pitch=0.3){ return {yaw, pitch, views:[]}; }
+class View3D{
+  constructor(cv, opt={}){
+    this.cv=cv; this.cam=opt.cam||newCam(); this.cam.views.push(this); this.zoom=opt.zoom||0.36; this.render=()=>{}; this._req=false; ALL_VIEWS.push(this);
+    const cam=this.cam; let last=null;
+    const kick=()=>cam.views.forEach(v=>v.request());
+    const move=e=>{ if(!last) return; e.preventDefault();
+      const dx=clamp(e.clientX-last.x,-40,40), dy=clamp(e.clientY-last.y,-40,40); last={x:e.clientX,y:e.clientY};
+      cam.yaw+=dx*0.009; cam.pitch=clamp(cam.pitch+dy*0.009,-1.45,1.45); kick(); };
+    const up=()=>{ last=null; window.removeEventListener('pointermove',move); window.removeEventListener('pointerup',up); window.removeEventListener('pointercancel',up); };
+    cv.addEventListener('pointerdown',e=>{ if(e.button>0) return; e.preventDefault(); try{ cv.focus({preventScroll:true}); }catch(_){}
+      last={x:e.clientX,y:e.clientY}; window.addEventListener('pointermove',move,{passive:false}); window.addEventListener('pointerup',up); window.addEventListener('pointercancel',up); });
+    cv.addEventListener('dragstart',e=>e.preventDefault());
+    cv.addEventListener('keydown',e=>{ const s=0.12;
+      if(e.key==='ArrowLeft') cam.yaw-=s; else if(e.key==='ArrowRight') cam.yaw+=s;
+      else if(e.key==='ArrowUp') cam.pitch=clamp(cam.pitch-s,-1.45,1.45); else if(e.key==='ArrowDown') cam.pitch=clamp(cam.pitch+s,-1.45,1.45);
+      else return; e.preventDefault(); kick(); });
+  }
+  request(){ if(this._req) return; this._req=true; requestAnimationFrame(()=>{ this._req=false; this.now(); }); }
+  now(){ const g=fitCanvas(this.cv); if(!g) return; this.ctx=g.ctx; this.w=g.w; this.h=g.h; this.S=Math.min(g.w,g.h)*this.zoom*0.93;
+    try{ this.render(this); }catch(err){ console.error(err); } }
+  P(p){ const cy=Math.cos(this.cam.yaw), sy=Math.sin(this.cam.yaw), cp=Math.cos(this.cam.pitch), sp=Math.sin(this.cam.pitch);
+    const x1=p[0]*cy-p[1]*sy, y1=p[0]*sy+p[1]*cy, z1=p[2];
+    const d=y1*cp-z1*sp, up=y1*sp+z1*cp, k=6/(6+d);
+    return {x:this.w/2+x1*this.S*k, y:this.h/2-up*this.S*k, d}; }
+  draw(items){ const ctx=this.ctx;
+    const pr=items.map(it=>{ const pts=(it.pts||[it.a,it.b,it.p].filter(Boolean)).map(p=>this.P(p)); return {it,pts,d:pts.reduce((s,p)=>s+p.d,0)/pts.length+(it.bias||0)}; });
+    pr.sort((a,b)=>b.d-a.d);
+    for(const {it,pts,d} of pr){ ctx.save(); let al=it.alpha??1; if(it.fade && d>0) al*=0.3; ctx.globalAlpha=al;
+      if(it.type==='poly'){ ctx.beginPath(); pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.closePath(); if(it.fill){ ctx.fillStyle=it.fill; ctx.fill(); } if(it.stroke){ ctx.strokeStyle=it.stroke; ctx.lineWidth=it.width||1; ctx.stroke(); } }
+      else if(it.type==='line'){ const [a,b]=pts; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.strokeStyle=it.color; ctx.lineWidth=it.width||1.5; ctx.lineCap='round'; ctx.setLineDash(it.dash||[]); ctx.stroke();
+        if(it.arrow && Math.hypot(b.x-a.x,b.y-a.y)>6){ const an=Math.atan2(b.y-a.y,b.x-a.x), L=it.head||9; ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(b.x,b.y); ctx.lineTo(b.x-L*Math.cos(an-0.42),b.y-L*Math.sin(an-0.42)); ctx.lineTo(b.x-L*Math.cos(an+0.42),b.y-L*Math.sin(an+0.42)); ctx.closePath(); ctx.fillStyle=it.color; ctx.fill(); } }
+      else if(it.type==='point'){ ctx.beginPath(); ctx.arc(pts[0].x,pts[0].y,it.r||4,0,7); ctx.fillStyle=it.color; ctx.fill(); if(it.ring){ ctx.strokeStyle=it.ring; ctx.lineWidth=1.5; ctx.stroke(); } }
+      else if(it.type==='text'){ ctx.font=it.font||('500 13px '+css('--f-mono')); ctx.fillStyle=it.color; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(it.text,pts[0].x+(it.dx||0),pts[0].y+(it.dy||0)); }
+      ctx.restore(); }
+  }
+}
+// draws the Bloch sphere base and returns item list for the scene
+function sphereItems(V, opt={}){
+  const ctx=V.ctx, c=V.P([0,0,0]), small=V.h<170;
+  ctx.save(); ctx.beginPath(); ctx.arc(c.x,c.y,V.S,0,7); ctx.fillStyle=css('--wash'); ctx.globalAlpha=0.55; ctx.fill(); ctx.globalAlpha=1; ctx.strokeStyle=css('--rule'); ctx.lineWidth=1.2; ctx.stroke(); ctx.restore();
+  const items=[], mu=css('--muted'), N=small?36:64;
+  const circ=(fn,alpha=0.5)=>{ for(let k=0;k<N;k++){ items.push({type:'line',a:fn(k/N*2*PI),b:fn((k+1)/N*2*PI),color:mu,width:1,alpha,fade:true}); } };
+  circ(t=>[Math.cos(t),Math.sin(t),0],0.6); circ(t=>[Math.cos(t),0,Math.sin(t)],0.35); circ(t=>[0,Math.cos(t),Math.sin(t)],0.35);
+  const cols=[css('--ci'),css('--cj'),css('--ck')], L=small?1.2:1.32;
+  for(let i=0;i<3;i++){ const e=[0,0,0]; e[i]=L; const n=[0,0,0]; n[i]=-1;
+    items.push({type:'line',a:n,b:e,color:cols[i],width:1.2,alpha:.6,arrow:true,head:6});
+    if(!small){ const t=[0,0,0]; t[i]=L+0.12; items.push({type:'text',p:t,text:'xyz'[i],color:cols[i],font:'italic 600 14px '+css('--f-body')}); } }
+  if(!small && opt.poles!==false){ items.push({type:'text',p:[0,0,1.12],text:'|0⟩',color:css('--ink'),dx:22,dy:-4}); items.push({type:'text',p:[0,0,-1.12],text:'|1⟩',color:css('--ink'),dx:22,dy:4}); }
+  return items;
+}
+function vecItem(v,color,opt={}){ return {type:'line',a:[0,0,0],b:v,color,width:opt.width||3,arrow:true,head:opt.head||10,dash:opt.dash,bias:opt.bias??-6,alpha:opt.alpha}; }
+function tipItem(v,color,r=4.5){ return {type:'point',p:v,r,color,bias:-7}; }
+function trailItems(pts,color,width=2,alpha=.8){ const out=[]; for(let i=1;i<pts.length;i++) out.push({type:'line',a:pts[i-1],b:pts[i],color,width,alpha,bias:-0.2}); return out; }
+function triadItems(q,dashed){ const cols=[css('--ci'),css('--cj'),css('--ck')]; const out=[];
+  [[1,0,0],[0,1,0],[0,0,1]].forEach((e,i)=>{ const v=Q.rot(q,e); out.push({type:'line',a:[0,0,0],b:v,color:cols[i],width:dashed?1.8:3,dash:dashed?[5,4]:null,arrow:!dashed,head:8,alpha:dashed?.85:1,bias:-3});
+    out.push({type:'text',p:v.map(x=>x*1.12),text:'xyz'[i]+(dashed?'′':''),color:cols[i],font:(dashed?'':'600 ')+'italic 13px '+css('--f-body'),bias:-3}); });
+  return out; }
+function axisLine(n,color,len=1.3,label){ const out=[{type:'line',a:n.map(x=>-x*len),b:n.map(x=>x*len),color,width:1.8,dash:[6,4],bias:-1}];
+  if(label){ out.push({type:'text',p:n.map(x=>x*(len+0.13)),text:label,color,font:'600 13px '+css('--f-mono')}); }
+  return out; }
+// path of vector v rotated by quaternion step from 0..angle about axis
+function arcPath(v,axis,angle,n=40){ const out=[]; for(let k=0;k<=n;k++) out.push(Q.rot(Q.aa(axis,angle*k/n),v)); return out; }
+function gateAxis(q){ return Q.axisAngle(q); }
+function svgEl(svg, html){ svg.innerHTML=html; }
+function btn(label, onclick, cls='btn'){ const b=document.createElement('button'); b.type='button'; b.className=cls; b.innerHTML=label; b.addEventListener('click',onclick); return b; }
+function slider(id, fmt){ const el=$('#'+id), out=$('#'+id+'-v'); const upd=()=>{ if(out) out.textContent=fmt(+el.value); }; upd(); el.addEventListener('input',upd); return el; }
+const degf=v=>v+'°';
+function stepsUI(el, names, cur){ el.innerHTML=names.map((n,i)=>'<li class="'+(i<cur?'done':i===cur?'cur':'')+'">'+n+'</li>').join(''); }
+function ampsUI(el, sim){ let h=''; for(let i=0;i<sim.N;i++){ const z=sim.amp(i), p=C.abs2(z);
+    const hue=Math.atan2(z[1],z[0]); h+='<span>|'+sim.ket(i)+'⟩</span><span class="bar"><span style="width:'+(100*p).toFixed(1)+'%"></span></span><span>'+(p<1e-6?'0':cHTML(z))+'</span>'; }
+  el.innerHTML=h; }
+function lerpV(a,b,e){ return a.map((x,i)=>x+(b[i]-x)*e); }
+
+// ===== chapter navigation =====
+const sections=$$('section.ch'), ids=sections.map(s=>s.dataset.id), drawers={};
+function reg(id, fn){ (drawers[id]=drawers[id]||[]).push(fn); }
+let visited={}; try{ visited=JSON.parse(store('qsph-visited')||'{}')||{}; }catch(e){ visited={}; }
+let current=0;
+(function buildRail(){ const list=$('#chapList'); let part='';
+  sections.forEach((s,i)=>{ if(s.dataset.part!==part){ part=s.dataset.part; const p=document.createElement('li'); p.className='part'; p.textContent=part; list.appendChild(p); }
+    const li=document.createElement('li'); const b=document.createElement('button'); b.type='button'; b.dataset.idx=i;
+    b.innerHTML='<span class="n">'+String(i).padStart(2,'0')+'</span><span>'+s.dataset.title+'</span><span class="seen"></span>';
+    b.addEventListener('click',()=>show(i,true)); li.appendChild(b); list.appendChild(li); }); })();
+function show(i, user){
+  current=i; sections.forEach((s,k)=>s.hidden=k!==i);
+  $$('.chap-list button').forEach(b=>b.setAttribute('aria-current', +b.dataset.idx===i?'true':'false'));
+  visited[ids[i]]=1; store('qsph-visited',JSON.stringify(visited)); store('qsph-current',ids[i]);
+  $$('.chap-list button').forEach(b=>b.querySelector('.seen').classList.toggle('on',!!visited[ids[+b.dataset.idx]]));
+  const n=ids.filter(k=>visited[k]).length; $('#progBar').style.width=(100*n/ids.length)+'%'; $('#progLabel').textContent=n+' of '+ids.length+' steps visited';
+  const pg=$('#pager'); pg.innerHTML='';
+  if(i>0) pg.appendChild(btn('<small>Previous</small>← '+sections[i-1].dataset.title,()=>show(i-1,true))); else pg.appendChild(document.createElement('span'));
+  if(i<sections.length-1) pg.appendChild(btn('<small>Next</small>'+sections[i+1].dataset.title+' →',()=>show(i+1,true),'btn primary'));
+  try{ history.replaceState(null,'','#'+ids[i]); }catch(e){}
+  if(user){ window.scrollTo({top:0,behavior:reduceMotion?'auto':'smooth'}); const cb=$$('.chap-list button')[i]; try{ cb.scrollIntoView({block:'nearest',inline:'nearest'}); }catch(e){} }
+  requestAnimationFrame(()=>(drawers[ids[i]]||[]).forEach(fn=>{ try{ fn(); }catch(e){ console.error(e); } }));
+}
+let _rq=false;
+function redrawAll(){ if(_rq) return; _rq=true; requestAnimationFrame(()=>{ _rq=false; _cc={}; (drawers[ids[current]]||[]).forEach(fn=>{ try{ fn(); }catch(e){ console.error(e); } }); }); }
+window.addEventListener('resize',redrawAll);
+try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redrawAll); }catch(e){}
+new MutationObserver(redrawAll).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+// ===== Step 0: hero =====
+(function(){
+  const V=new View3D($('#cv-hero'),{zoom:0.34});
+  const pts=[[[0,0,1],'|0⟩'],[[0,0,-1],'|1⟩'],[[1,0,0],'|+⟩'],[[-1,0,0],'|−⟩'],[[0,1,0],'|+i⟩'],[[0,-1,0],'|−i⟩']];
+  V.render=V=>{ const it=sphereItems(V,{poles:false}); const ac=css('--accent'), ink=css('--ink');
+    pts.forEach(([p,l])=>{ it.push({type:'point',p,r:5,color:ac,bias:-2}); it.push({type:'text',p:p.map(x=>x*1.0),text:l,color:ink,dx:p[2]?24:18,dy:p[2]?0:-14,bias:-2}); });
+    const v=dirOf(55*deg,35*deg); it.push(vecItem(v,ink)); it.push(tipItem(v,ac)); it.push({type:'text',p:v,text:'|ψ⟩',color:ink,dx:20,dy:-10,bias:-8});
+    V.draw(it); };
+  reg('intro',()=>V.now());
+})();
+
+// ===== Step 1: qubit =====
+(function(){
+  const V=new View3D($('#cv-qubit'));
+  const th=slider('qb-th',degf), ph=slider('qb-ph',degf), ga=slider('qb-g',degf);
+  const pres=[['|0⟩',0,0],['|1⟩',180,0],['|+⟩',90,0],['|−⟩',90,180],['|+i⟩',90,90],['|−i⟩',90,270]];
+  const pb=$('#qb-presets'); pres.forEach(([l,t,p])=>pb.appendChild(btn(l,()=>{ const t0=+th.value, p0=+ph.value; tween(V,500,e=>{ th.value=Math.round(t0+(t-t0)*e); ph.value=Math.round(p0+(p-p0)*e); th.dispatchEvent(new Event('input')); ph.dispatchEvent(new Event('input')); }); },'btn gate')));
+  function draw(){ V.request(); }
+  V.render=V=>{ const t=th.value*deg, p=ph.value*deg, v=dirOf(t,p); const it=sphereItems(V); const ac=css('--accent'), gold=css('--gold'), ink=css('--ink');
+    // theta arc in vertical plane, phi arc on equator
+    const ta=[]; for(let k=0;k<=30;k++) ta.push(dirOf(t*k/30,p).map(x=>x*0.42)); it.push(...trailItems(ta,gold,2,1));
+    if(t>0.01){ const pa=[]; for(let k=0;k<=30;k++) pa.push([0.32*Math.cos(p*k/30),0.32*Math.sin(p*k/30),0]); it.push(...trailItems(pa,gold,2,1));
+      const foot=[v[0],v[1],0]; it.push({type:'line',a:v,b:foot,color:ink,width:1,dash:[3,3],alpha:.6,bias:-1}); it.push({type:'line',a:[0,0,0],b:foot,color:ink,width:1,dash:[3,3],alpha:.6,bias:-1}); }
+    it.push({type:'text',p:dirOf(t/2,p).map(x=>x*0.55),text:'θ',color:gold,font:'italic 600 15px '+css('--f-body'),bias:-8});
+    if(t>0.01) it.push({type:'text',p:[0.45*Math.cos(p/2),0.45*Math.sin(p/2),0],text:'φ',color:gold,font:'italic 600 15px '+css('--f-body'),bias:-8});
+    it.push(vecItem(v,ink)); it.push(tipItem(v,ac,5)); V.draw(it); };
+  function upd(){ const t=th.value*deg, p=ph.value*deg, g=ga.value*deg;
+    const al=C.mul(C.exp(g),[Math.cos(t/2),0]), be=C.mul(C.exp(g+p),[Math.sin(t/2),0]); const v=dirOf(t,p);
+    const q=Q.mul(Q.aa([0,0,1],p),Q.aa([0,1,0],t));
+    $('#qb-read').innerHTML='<span class="k">|ψ⟩ =</span> ('+cHTML(al)+')|0⟩ + ('+cHTML(be)+')|1⟩'+
+      '<br><span class="k">P(0) = |α|² =</span> '+f(C.abs2(al))+' &nbsp; <span class="k">P(1) = |β|² =</span> '+f(C.abs2(be))+
+      '<br><span class="k">Bloch vector r =</span> '+vHTML(v)+
+      '<br><span class="k">preparing quaternion q = R<sub>z</sub>(φ)R<sub>y</sub>(θ) =</span> '+qHTML(q);
+    // phasors
+    const ink=css('--ink'), mu=css('--muted'), rule=css('--rule'); const R=46;
+    const ph1=(cx,z,lab,col)=>{ const m=Math.hypot(z[0],z[1]), x=cx+R*z[0], y=65-R*z[1];
+      return '<circle cx="'+cx+'" cy="65" r="'+R+'" style="fill:none;stroke:'+rule+'"/><line x1="'+(cx-R-4)+'" y1="65" x2="'+(cx+R+4)+'" y2="65" style="stroke:'+rule+'"/><line x1="'+cx+'" y1="'+(65-R-4)+'" x2="'+cx+'" y2="'+(65+R+4)+'" style="stroke:'+rule+'"/>'+
+        (m>1e-3?'<line x1="'+cx+'" y1="65" x2="'+x.toFixed(1)+'" y2="'+y.toFixed(1)+'" style="stroke:'+col+';stroke-width:3;stroke-linecap:round"/><circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="4" style="fill:'+col+'"/>':'')+
+        '<text x="'+cx+'" y="126" text-anchor="middle" style="fill:'+mu+';font-size:12px">'+lab+'</text>'; };
+    svgEl($('#qb-phasors'), ph1(75,al,'α (complex plane)',css('--accent'))+ph1(225,be,'β (complex plane)',css('--gold')));
+    draw(); }
+  [th,ph,ga].forEach(e=>e.addEventListener('input',upd));
+  reg('qubit',()=>{ upd(); V.now(); });
+})();
+
+// ===== Step 2: measurement =====
+(function(){
+  const V=new View3D($('#cv-meas'));
+  const th=slider('ms-th',degf), ph=slider('ms-ph',degf), az=slider('ms-az',degf), el=slider('ms-el',degf);
+  let counts=[0,0], basis='Z', anim=null, vShow=null;
+  const bases={Z:[0,90],X:[0,0],Y:[90,0]};
+  const bb=$('#ms-basis'); ['Z','X','Y','Custom'].forEach(k=>bb.appendChild(btn(k==='Custom'?'Custom axis':k+' basis',()=>{ basis=k; if(bases[k]){ az.value=bases[k][0]; el.value=bases[k][1]; az.dispatchEvent(new Event('input')); el.dispatchEvent(new Event('input')); basis=k; } counts=[0,0]; upd(); },'btn')));
+  const axis=()=>{ const a=az.value*deg, e=el.value*deg; return [Math.cos(e)*Math.cos(a), Math.cos(e)*Math.sin(a), Math.sin(e)]; };
+  const state=()=>dirOf(th.value*deg, ph.value*deg);
+  V.render=V=>{ const n=axis(), v=vShow||state(); const it=sphereItems(V); const ac=css('--accent'), ink=css('--ink'), gold=css('--gold');
+    it.push(...axisLine(n,ac,1.3,'+n')); it.push({type:'text',p:n.map(x=>-x*1.43),text:'−n',color:ac,font:'600 13px '+css('--f-mono')});
+    const pr=n.map(x=>x*vdot(v,n)); it.push({type:'line',a:v,b:pr,color:gold,width:1.5,dash:[3,3],bias:-5}); it.push({type:'point',p:pr,r:5,color:gold,bias:-7});
+    it.push(vecItem(v,ink)); it.push(tipItem(v,ac,5)); V.draw(it); };
+  function hist(){ const n=axis(), v=state(), p=(1+vdot(v,n))/2, tot=counts[0]+counts[1];
+    const row=(lab,c,pp)=>'<span>'+lab+'</span><span class="bar"><span style="width:'+(tot?100*c/tot:0).toFixed(1)+'%"></span><i style="left:'+(100*pp).toFixed(1)+'%"></i></span><span>'+c+'</span>';
+    $('#ms-hist').innerHTML=row('+n',counts[0],p)+row('−n',counts[1],1-p);
+    $('#ms-read').innerHTML='<span class="k">axis n =</span> '+vHTML(n)+' &nbsp; <span class="k">r =</span> '+vHTML(v)+
+      '<br><span class="k">r·n =</span> '+f(vdot(v,n))+' &nbsp; <span class="k">P(+n) = (1 + r·n)/2 =</span> <b>'+f(p)+'</b> &nbsp; <span class="k">P(−n) =</span> '+f(1-p)+
+      (tot?'<br><span class="k">observed after '+tot+' shots:</span> '+f(counts[0]/tot)+' / '+f(counts[1]/tot):'');
+    $$('#ms-basis .btn').forEach(b=>b.classList.toggle('on', b.textContent.startsWith(basis))); }
+  function upd(){ hist(); V.request(); }
+  th.addEventListener('input',()=>{ counts=[0,0]; vShow=null; upd(); }); ph.addEventListener('input',()=>{ counts=[0,0]; vShow=null; upd(); });
+  [az,el].forEach(x=>x.addEventListener('input',e=>{ if(e.isTrusted) basis='Custom'; counts=[0,0]; upd(); }));
+  function shots(k){ const n=axis(), p=(1+vdot(state(),n))/2; for(let i=0;i<k;i++){ if(Math.random()<p) counts[0]++; else counts[1]++; } upd(); }
+  $('#ms-100').onclick=()=>shots(100); $('#ms-1000').onclick=()=>shots(1000); $('#ms-clear').onclick=()=>{ counts=[0,0]; upd(); };
+  $('#ms-one').onclick=()=>{ const n=axis(), v0=state(), p=(1+vdot(v0,n))/2, plus=Math.random()<p; const tgt=plus?n:n.map(x=>-x);
+    counts[plus?0:1]++; hist();
+    tween(V,550,e=>{ const w=lerpV(v0,tgt,e), L=vlen(w)||1; vShow=w.map(x=>x/L); V.now(); },()=>{
+      const t=Math.acos(clamp(tgt[2],-1,1)); let p2=Math.atan2(tgt[1],tgt[0]); if(p2<0) p2+=2*PI;
+      th.value=Math.round(t/deg); ph.value=Math.round(p2/deg)%361; th.dispatchEvent(new Event('input')); ph.dispatchEvent(new Event('input'));
+      vShow=dirOf(th.value*deg,ph.value*deg); counts=[plus?1:0,plus?0:1]; upd(); setTimeout(()=>{ vShow=null; },0); }); };
+  reg('measure',()=>{ upd(); V.now(); });
+})();
+
+// ===== Step 3: gate lab =====
+(function(){
+  const V=new View3D($('#cv-gates'),{zoom:0.35}); const ang=slider('gt-ang',degf);
+  let sim=new Sim(1), qT=[1,0,0,0], hist=[], trail=[], vShow=[0,0,1], curAxis=null, queue=[], busy=false, note='';
+  const pal=['X','Y','Z','H','S','S†','T','T†','√X','Rx','Ry','Rz','P'];
+  pal.forEach(g=>$('#gt-palette').appendChild(btn(['Rx','Ry','Rz','P'].includes(g)?g+'(θ)':g,()=>enqueue(g),'btn gate')));
+  function gateOf(g){ const a=ang.value*deg;
+    if(g==='Rx') return {...rotGate([1,0,0],a), label:'Rx('+ang.value+'°)'}; if(g==='Ry') return {...rotGate([0,1,0],a), label:'Ry('+ang.value+'°)'};
+    if(g==='Rz') return {...rotGate([0,0,1],a), label:'Rz('+ang.value+'°)'}; if(g==='P') return {...phaseGate(a), label:'P('+ang.value+'°)'};
+    return {...GATES[g], label:g}; }
+  function enqueue(g){ queue.push(g); if(!busy) next(); }
+  function next(){ if(!queue.length){ busy=false; curAxis=null; V.request(); return; } busy=true; const G=gateOf(queue.shift());
+    const v0=sim.bloch(0); sim.apply(0,G.M); qT=Q.mul(G.q,qT); hist.push(G.label);
+    const {axis,angle}=Q.axisAngle(G.q); curAxis=angle>1e-6?axis:null; const path=arcPath(v0,axis,angle,40);
+    tween(V,520,e=>{ vShow=Q.rot(Q.aa(axis,angle*e),v0); const k=Math.round(e*40); V._partial=path.slice(0,k+1); V.now(); },
+      ()=>{ trail.push(path); V._partial=null; vShow=sim.bloch(0); read(); next(); });
+    read(); }
+  V.render=V=>{ const it=sphereItems(V); const ac=css('--accent'), ink=css('--ink');
+    trail.forEach(p=>it.push(...trailItems(p,ac,2,.7))); if(V._partial) it.push(...trailItems(V._partial,ac,2.4,1));
+    if(curAxis) it.push(...axisLine(curAxis,css('--gold'),1.35));
+    it.push(vecItem(vShow,ink)); it.push(tipItem(vShow,ac,5)); V.draw(it); };
+  function read(){ const a=sim.amp(0), b=sim.amp(1); const {axis,angle}=Q.axisAngle(qT);
+    $('#gt-read').innerHTML='<span class="k">circuit:</span> |0⟩'+(hist.length?' → '+hist.join(' → '):' (click a gate)')+
+      '<br><span class="k">total quaternion q = q<sub>n</sub>⋯q₁ =</span> <b>'+qHTML(qT)+'</b>'+
+      '<br><span class="k">as one rotation:</span> '+fd(angle)+' about '+vHTML(axis,2)+
+      '<br><span class="k">state (textbook matrices):</span> ('+cHTML(a)+')|0⟩ + ('+cHTML(b)+')|1⟩'+
+      '<br><span class="k">Bloch vector q k̂ q* =</span> '+vHTML(Q.rot(qT,[0,0,1]))+(note?'<br><span class="k">check:</span> '+note:''); }
+  function reset(){ stopTween(V); queue=[]; busy=false; sim=new Sim(1); qT=[1,0,0,0]; hist=[]; trail=[]; vShow=[0,0,1]; curAxis=null; V._partial=null; note=''; read(); V.request(); }
+  $('#gt-reset').onclick=reset;
+  const presets=[['HXH',['H','X','H'],'expect Z, the quaternion ±<span class="qk">k</span>'],['HZH',['H','Z','H'],'expect X, ±<span class="qi">i</span>'],['SS',['S','S'],'expect Z: ((1+<span class="qk">k</span>)/√2)² = <span class="qk">k</span>'],['TT',['T','T'],'expect S'],
+    ['X then Y',['X','Y'],'<span class="qj">j</span><span class="qi">i</span> = −<span class="qk">k</span>'],['Y then X',['Y','X'],'<span class="qi">i</span><span class="qj">j</span> = +<span class="qk">k</span>, same rotation, opposite sign'],['HH',['H','H'],'h² = −1: back to the start, sign flipped'],['(HS)³',['S','H','S','H','S','H'],'(h s)³ = ±1, the identity rotation']];
+  presets.forEach(([l,seq,n])=>$('#gt-presets').appendChild(btn(l,()=>{ reset(); note=n; seq.forEach(enqueue); },'btn')));
+  reg('gates',()=>{ read(); V.now(); });
+})();
+
+// ===== Step 4: Euler / ZYZ =====
+(function(){
+  const V=new View3D($('#cv-euler'),{zoom:0.34});
+  const sb=slider('eu-b',degf), sg=slider('eu-g',degf), sd=slider('eu-d',degf);
+  let target=Q.normalize([0.42,0.31,-0.55,0.65]);
+  const user=()=>Q.fromZYZ(sb.value*deg, sg.value*deg, sd.value*deg);
+  V.render=V=>{ const it=sphereItems(V,{poles:false}); it.push(...triadItems(target,true)); it.push(...triadItems(user(),false)); V.draw(it); };
+  function upd(){ const qu=user(), d=Q.dist(qu,target), z=Q.zyz(target);
+    $('#eu-badge').innerHTML = d<3*deg ? '<span class="badge ok">Matched to within '+fd(d)+'</span>' : '<span class="badge">Off by '+fd(d)+'</span>';
+    $('#eu-read').innerHTML='<span class="k">mystery quaternion q =</span> '+qHTML(target)+
+      '<br><span class="k">your R<sub>z</sub>(β)R<sub>y</sub>(γ)R<sub>z</sub>(δ) =</span> '+qHTML(qu)+
+      '<br><span class="k">rotation still needed:</span> '+fd(d)+' &nbsp; <span class="k">(computed as 2·arccos|q·q′|, so q and −q count as equal)</span>'+
+      '<br><span class="k">quaternion solution:</span> β = '+fd(z.beta)+', γ = '+fd(z.gamma)+', δ = '+fd(z.delta);
+    V.request(); }
+  [sb,sg,sd].forEach(x=>x.addEventListener('input',upd));
+  const wrap=a=>{ a=((a+180)%360+360)%360-180; return a; };
+  $('#eu-new').onclick=()=>{ target=Q.normalize([Math.random()-.5,Math.random()-.5,Math.random()-.5,Math.random()-.5]); upd(); };
+  $('#eu-solve').onclick=()=>{ const z=Q.zyz(target); const to=[wrap(z.beta/deg), z.gamma/deg, wrap(z.delta/deg)], from=[+sb.value,+sg.value,+sd.value];
+    tween(V,900,e=>{ [sb,sg,sd].forEach((s,i)=>{ s.value=from[i]+(to[i]-from[i])*e; s.dispatchEvent(new Event('input')); }); }); };
+  reg('euler',()=>{ upd(); V.now(); });
+})();
+
+// ===== Step 5: interference =====
+(function(){
+  const V=new View3D($('#cv-intf'),{zoom:0.35}); const ph=slider('if-ph',degf); const glob=$('#if-global');
+  const hA=[S2,0,S2]; let prog=4; // how much of the circuit is drawn (0..4 continuous)
+  function segs(){ const p=ph.value*deg, g=glob.checked; const v0=[0,0,1];
+    const s1=arcPath(v0,hA,PI,40); const v1=s1[40]; const s2=g?[v1,v1]:arcPath(v1,[0,0,1],p,40); const v2=s2[s2.length-1]; const s3=arcPath(v2,hA,PI,40);
+    return [s1,s2,s3]; }
+  function stateAt(t){ const S=segs(); if(t<=0) return [0,0,1]; const i=Math.min(2,Math.floor(t-0)); if(t>=3) return S[2][S[2].length-1];
+    const s=S[Math.floor(t)], k=t-Math.floor(t); const idx=Math.round(k*(s.length-1)); return s[idx]; }
+  V.render=V=>{ const it=sphereItems(V); const ac=css('--accent'), ink=css('--ink'), gold=css('--gold'); const S=segs(); const t=Math.min(3,prog);
+    const cols=[ac,gold,ac]; S.forEach((s,i)=>{ if(t<=i) return; const n=Math.max(1,Math.round(Math.min(1,t-i)*(s.length-1))); it.push(...trailItems(s.slice(0,n+1),cols[i],2.4,.9)); });
+    if(t<3 && t>0){ const i=Math.floor(t); it.push(...axisLine(i===1?[0,0,1]:hA,css('--muted'),1.3)); }
+    const v=stateAt(t); it.push(vecItem(v,ink)); it.push(tipItem(v,ac,5)); V.draw(it); };
+  function plot(){ const p=+ph.value, g=glob.checked; const W=320,H=170,L=34,R=10,T=12,B=30, x=a=>L+(W-L-R)*a/360, y=v=>T+(H-T-B)*(1-v);
+    const ink=css('--ink'), mu=css('--muted'), rule=css('--rule'), ac=css('--accent');
+    let d=''; for(let a=0;a<=360;a+=4) d+=(a?'L':'M')+x(a).toFixed(1)+','+y(Math.cos(a*deg/2)**2).toFixed(1);
+    let s='<rect x="'+L+'" y="'+T+'" width="'+(W-L-R)+'" height="'+(H-T-B)+'" style="fill:none;stroke:'+rule+'"/>';
+    [0,90,180,270,360].forEach(a=>s+='<line x1="'+x(a)+'" x2="'+x(a)+'" y1="'+T+'" y2="'+(H-B)+'" style="stroke:'+rule+';stroke-dasharray:2 3"/><text x="'+x(a)+'" y="'+(H-B+16)+'" text-anchor="middle" style="fill:'+mu+';font-size:11px">'+a+'°</text>');
+    [0,0.5,1].forEach(v=>s+='<text x="'+(L-6)+'" y="'+(y(v)+4)+'" text-anchor="end" style="fill:'+mu+';font-size:11px">'+v+'</text>');
+    s+='<path d="'+d+'" style="fill:none;stroke:'+(g?mu:ac)+';stroke-width:'+(g?1.2:2.4)+(g?';stroke-dasharray:4 3':'')+'"/>';
+    if(g) s+='<line x1="'+x(0)+'" x2="'+x(360)+'" y1="'+y(1)+'" y2="'+y(1)+'" style="stroke:'+ac+';stroke-width:2.4"/>';
+    const pv=g?1:Math.cos(p*deg/2)**2; s+='<circle cx="'+x(p)+'" cy="'+y(pv)+'" r="5" style="fill:'+css('--gold')+';stroke:'+css('--paper')+';stroke-width:1.5"/>';
+    s+='<text x="'+(W-R)+'" y="'+(T+12)+'" text-anchor="end" style="fill:'+ink+';font-size:12px">P(0) = '+(g?'1':'cos²(φ/2)')+'</text>';
+    svgEl($('#if-plot'),s); }
+  function read(){ const p=ph.value*deg, g=glob.checked; const s=new Sim(1); const lines=[]; s.apply(0,GATES.H.M); lines.push('after H: ('+cHTML(s.amp(0))+')|0⟩ + ('+cHTML(s.amp(1))+')|1⟩');
+    if(g){ const ph2=C.exp(p); s.re[0]=0; s.im[0]=0; s.re[1]=0; s.im[1]=0; s.re[0]=S2*ph2[0]; s.im[0]=S2*ph2[1]; s.re[1]=S2*ph2[0]; s.im[1]=S2*ph2[1]; } else s.apply(0,phaseGate(p).M);
+    lines.push('after '+(g?'global phase':'P(φ)')+': ('+cHTML(s.amp(0))+')|0⟩ + ('+cHTML(s.amp(1))+')|1⟩'); s.apply(0,GATES.H.M);
+    lines.push('after H: ('+cHTML(s.amp(0))+')|0⟩ + ('+cHTML(s.amp(1))+')|1⟩ &nbsp; <span class="k">P(0) =</span> <b>'+f(C.abs2(s.amp(0)))+'</b>');
+    const qm=g?[1,0,0,0]:Q.aa([0,0,1],p); const qt=Q.mul(GATES.H.q,Q.mul(qm,GATES.H.q));
+    lines.push('<span class="k">circuit quaternion h·q<sub>φ</sub>·h =</span> '+qHTML(qt));
+    $('#if-read').innerHTML=lines.join('<br>'); }
+  function upd(){ stopTween(V); prog=4; stepsUI($('#if-steps'),['|0⟩','H',glob.checked?'global phase':'P(φ)','H','measure'],4); plot(); read(); V.request(); }
+  ph.addEventListener('input',upd); glob.addEventListener('change',upd);
+  $('#if-run').onclick=()=>{ prog=0; tween(V,2400,e=>{ prog=3*e; stepsUI($('#if-steps'),['|0⟩','H',glob.checked?'global phase':'P(φ)','H','measure'],Math.min(3,Math.floor(prog)+1)); V.now(); },()=>{ prog=4; stepsUI($('#if-steps'),['|0⟩','H',glob.checked?'global phase':'P(φ)','H','measure'],4); V.now(); }); };
+  reg('interference',()=>{ upd(); V.now(); });
+})();
+// ===== Step 6: noise =====
+(function(){
+  const V=new View3D($('#cv-noise'),{zoom:0.35});
+  const th=slider('nz-th',degf), t1=slider('nz-t1',v=>v+' μs'), t2=slider('nz-t2',v=>v+' μs'), dt=slider('nz-d',v=>v), tt=slider('nz-t',v=>v+' μs');
+  let note='';
+  function r(t){ const T1=+t1.value, T2=+t2.value, D=2*PI*(+dt.value)/100, t0=th.value*deg; const m=Math.sin(t0)*Math.exp(-t/T2);
+    return [m*Math.cos(D*t), m*Math.sin(D*t), 1-(1-Math.cos(t0))*Math.exp(-t/T1)]; }
+  V.render=V=>{ const it=sphereItems(V); const ac=css('--accent'), ink=css('--ink'); const T=+tt.value, pts=[]; for(let k=0;k<=160;k++) pts.push(r(T*k/160));
+    it.push(...trailItems(pts,ac,2,.85)); const v=r(T); it.push({type:'point',p:r(0),r:4,color:css('--muted')});
+    it.push(vecItem(v,ink)); it.push(tipItem(v,ac,5)); V.draw(it); };
+  function upd(e){ if(+t2.value>2*+t1.value){ t2.value=2*+t1.value; t2.dispatchEvent(new Event('input')); note='T₂ was capped at 2T₁, the physical limit.'; } else if(e) note='';
+    const v=r(+tt.value), L=vlen(v), pur=(1+L*L)/2;
+    $('#nz-read').innerHTML='<span class="k">r(t) =</span> '+vHTML(v)+' &nbsp; <span class="k">|r| =</span> '+f(L)+' &nbsp; <span class="k">purity Tr ρ² = (1+|r|²)/2 =</span> '+f(pur)+
+      '<br><span class="k">ρ =</span> [ '+f((1+v[2])/2)+' , '+cHTML([v[0]/2,-v[1]/2])+' ; '+cHTML([v[0]/2,v[1]/2])+' , '+f((1-v[2])/2)+' ]'+(note?'<br><span class="k">note:</span> '+note:'');
+    V.request(); }
+  [th,t1,t2,dt,tt].forEach(x=>x.addEventListener('input',upd));
+  $('#nz-play').onclick=()=>{ tween(V,5000,e=>{ tt.value=Math.round(200*e); tt.dispatchEvent(new Event('input')); }); };
+  reg('noise',()=>{ upd(); V.now(); });
+
+  // echo
+  const E=new View3D($('#cv-echo'),{zoom:0.35}); const et=slider('ec-t',v=>v), on=$('#ec-on'), sp=slider('ec-spread',v=>v+'%'); const tau=50;
+  const dels=()=>Array.from({length:9},(_,k)=>(k-4)/4*(+sp.value/100)*0.12);
+  function phis(t){ return dels().map(d=> (on.checked && t>tau) ? (-d*tau + d*(t-tau)) : d*t); }
+  E.render=E=>{ const it=sphereItems(E); const t=+et.value, P=phis(t), D=dels(); const ci=css('--ci'), ck=css('--ck'), ink=css('--ink'), gold=css('--gold');
+    let m=[0,0,0]; P.forEach((p,k)=>{ const v=[Math.cos(p),Math.sin(p),0]; m=m.map((x,i)=>x+v[i]/9); const col=D[k]>0?ci:D[k]<0?ck:ink;
+      it.push({type:'line',a:[0,0,0],b:v,color:col,width:1.8,alpha:.85,bias:-4}); it.push({type:'point',p:v,r:3.5,color:col,bias:-5}); });
+    it.push(vecItem(m,gold,{width:4})); if(on.checked && t>=tau-1 && t<=tau+1) it.push(...axisLine([1,0,0],gold,1.35,'X pulse'));
+    E.draw(it);
+    const L=vlen(m); $('#ec-read').innerHTML='<span class="k">t =</span> '+t+' &nbsp; <span class="k">average vector length (coherence) =</span> <b>'+f(L)+'</b>'+(on.checked?'<br>'+(t<tau?'pulse at t = 50':t<2*tau-2?'pulse applied: spins reversed, refocusing at t = 100':Math.abs(t-2*tau)<=2?'echo: all spins aligned again':'past the echo: fanning out again'):'<br>no pulse: coherence only decays'); };
+  [et,sp].forEach(x=>x.addEventListener('input',()=>E.request())); on.addEventListener('change',()=>E.request());
+  $('#ec-play').onclick=()=>{ tween(E,6000,e=>{ et.value=Math.round(120*e); et.dispatchEvent(new Event('input')); E.now(); }); };
+  reg('noise',()=>E.now());
+})();
+
+// ===== Step 7: entanglement =====
+(function(){
+  const cam=newCam(); const A=new View3D($('#cv-entA'),{cam,zoom:0.33}), B=new View3D($('#cv-entB'),{cam,zoom:0.33});
+  const ang=slider('en-ang',degf); let sim=new Sim(2), show=[[0,0,1],[0,0,1]], log=[], busy=false;
+  const rend=k=>V=>{ const it=sphereItems(V); const v=show[k], L=vlen(v); const ac=css('--accent'), ink=css('--ink');
+    if(L<0.02) it.push({type:'point',p:[0,0,0],r:6,color:ac,ring:ink,bias:-7}); else { it.push(vecItem(v,ink)); it.push(tipItem(v,ac,5)); }
+    V.draw(it); };
+  A.render=rend(0); B.render=rend(1);
+  function read(){ const a=[0,1,2,3].map(i=>sim.amp(i)); const det=C.add(C.mul(a[0],a[3]),C.mul(a[1],a[2]).map(x=>-x)); const Cc=2*Math.hypot(...det);
+    const rA=sim.bloch(0), rB=sim.bloch(1); ampsUI($('#en-amps'),sim);
+    $('#en-lenA').textContent='|r_A| = '+f(vlen(rA)); $('#en-lenB').textContent='|r_B| = '+f(vlen(rB));
+    $('#en-read').innerHTML='<span class="k">operations:</span> '+(log.length?log.join(' → '):'none, state |00⟩')+
+      '<br><span class="k">r_A =</span> '+vHTML(rA)+' &nbsp; <span class="k">r_B =</span> '+vHTML(rB)+
+      '<br><span class="k">concurrence C = 2|a₀₀a₁₁ − a₀₁a₁₀| =</span> <b>'+f(Cc)+'</b> &nbsp; <span class="k">|r_A|² + C² =</span> '+f(vlen(rA)**2+Cc*Cc)+
+      ' &nbsp; '+(Cc<1e-3?'<span class="badge ok">product state</span>':Cc>0.999?'<span class="badge warn">maximally entangled</span>':'<span class="badge">partly entangled</span>'); }
+  function animateTo(local){ // local: {k, q} for a single-qubit gate, else lerp
+    const from=show.map(v=>v.slice()), to=[sim.bloch(0),sim.bloch(1)]; read(); busy=true;
+    tween(A,480,e=>{ show=[0,1].map(k=>{ if(local && local.k===k){ const {axis,angle}=Q.axisAngle(local.q); return Q.rot(Q.aa(axis,angle*e),from[k]); } return lerpV(from[k],to[k],e); }); A.now(); B.now(); },
+      ()=>{ show=to; busy=false; A.now(); B.now(); }); }
+  function gate(k,g){ let G; if(g==='Ry'){ G=rotGate([0,1,0],ang.value*deg); log.push('Ry('+ang.value+'°) on '+'AB'[k]); } else { G=GATES[g]; log.push(g+' on '+'AB'[k]); }
+    sim.apply(k,G.M); animateTo({k,q:G.q}); }
+  ['H','X','Y','Z','S','T','Ry'].forEach(g=>{ $('#en-gA').appendChild(btn(g==='Ry'?'Ry(θ)':g,()=>gate(0,g),'btn gate')); $('#en-gB').appendChild(btn(g==='Ry'?'Ry(θ)':g,()=>gate(1,g),'btn gate')); });
+  const two=[['CNOT A→B',()=>{ sim.cnot(0,1); log.push('CNOT A→B'); }],['CNOT B→A',()=>{ sim.cnot(1,0); log.push('CNOT B→A'); }],['CZ',()=>{ sim.cphase(0,1,PI); log.push('CZ'); }],
+    ['Measure A',()=>{ const o=sim.measure(0); log.push('measure A → '+o); }],['Measure B',()=>{ const o=sim.measure(1); log.push('measure B → '+o); }]];
+  two.forEach(([l,fn])=>$('#en-two').appendChild(btn(l,()=>{ fn(); animateTo(null); },'btn')));
+  $('#en-two').appendChild(btn('Reset to |00⟩',()=>{ sim=new Sim(2); log=[]; animateTo(null); },'btn'));
+  const H=GATES.H.M, X=GATES.X.M, Z=GATES.Z.M;
+  const presets=[['|00⟩',s=>s,'|00⟩'],['Φ⁺',s=>s.apply(0,H).cnot(0,1),'Φ⁺ = (|00⟩+|11⟩)/√2'],['Φ⁻',s=>s.apply(0,H).cnot(0,1).apply(0,Z),'Φ⁻ = (|00⟩−|11⟩)/√2'],
+    ['Ψ⁺',s=>s.apply(0,H).cnot(0,1).apply(1,X),'Ψ⁺ = (|01⟩+|10⟩)/√2'],['Ψ⁻',s=>s.apply(0,H).cnot(0,1).apply(1,X).apply(0,Z),'Ψ⁻ = (|01⟩−|10⟩)/√2'],
+    ['Partial: Ry(θ), CNOT',s=>s.apply(0,rotGate([0,1,0],ang.value*deg).M).cnot(0,1),'Ry(θ) on A, CNOT']];
+  presets.forEach(([l,fn,d])=>$('#en-presets').appendChild(btn(l,()=>{ sim=fn(new Sim(2)); log=['prepared '+(l.startsWith('Partial')?'Ry('+ang.value+'°) on A, CNOT':d)]; animateTo(null); },'btn')));
+  reg('entangle',()=>{ show=[sim.bloch(0),sim.bloch(1)]; read(); A.now(); B.now(); });
+})();
+
+// ===== Step 8: kickback + Deutsch =====
+(function(){
+  const cam=newCam(); const A=new View3D($('#cv-kbA'),{cam,zoom:0.33}), B=new View3D($('#cv-kbB'),{cam,zoom:0.33});
+  const lam=slider('kb-lam',degf); let tgt='1';
+  const tg=$('#kb-tgt'); [['1','Target |1⟩ (eigenvalue e^{iλ})'],['0','Target |0⟩ (eigenvalue 1)'],['+','Target |+⟩ (not an eigenvector)']].forEach(([k,l])=>tg.appendChild(btn(l,()=>{ tgt=k; upd(); },'btn')));
+  function build(l){ const s=new Sim(2); s.apply(0,GATES.H.M); if(tgt==='1') s.apply(1,GATES.X.M); if(tgt==='+') s.apply(1,GATES.H.M); s.cphase(0,1,l); return s; }
+  const path=()=>{ const out=[]; const L=lam.value*deg; for(let k=0;k<=48;k++) out.push(build(L*k/48).bloch(0)); return out; };
+  A.render=V=>{ const it=sphereItems(V); const s=build(lam.value*deg), v=s.bloch(0); it.push(...trailItems(path(),css('--gold'),2.2,1)); it.push({type:'point',p:[1,0,0],r:3.5,color:css('--muted')}); it.push(vecItem(v,css('--ink'))); it.push(tipItem(v,css('--accent'),5)); V.draw(it); };
+  B.render=V=>{ const it=sphereItems(V); const v=build(lam.value*deg).bloch(1); it.push(vecItem(v,css('--ink'))); it.push(tipItem(v,css('--accent'),5)); V.draw(it); };
+  function upd(){ $$('#kb-tgt .btn').forEach((b,i)=>b.classList.toggle('on',['1','0','+'][i]===tgt)); const L=lam.value*deg, s=build(L), a=s.bloch(0), b=s.bloch(1); let az=Math.atan2(a[1],a[0])/deg; if(az<0) az+=360;
+    $('#kb-read').innerHTML='<span class="k">control r =</span> '+vHTML(a)+' &nbsp; <span class="k">|r| =</span> '+f(vlen(a))+(vlen(a)>0.99?' &nbsp; <span class="k">azimuth =</span> '+az.toFixed(0)+'°':'')+
+      '<br><span class="k">target r =</span> '+vHTML(b)+' &nbsp; <span class="k">|r| =</span> '+f(vlen(b))+
+      '<br>'+(tgt==='1'?'<span class="k">kicked-back quaternion on the control:</span> '+qHTML(Q.aa([0,0,1],L))+' = R<sub>z</sub>('+lam.value+'°). The target did not move.':
+        tgt==='0'?'Eigenvalue 1: nothing is kicked back, and both qubits stay put.':'Not an eigenvector: the qubits become entangled, and both vectors shrink into their balls.');
+    A.request(); B.request(); }
+  lam.addEventListener('input',upd); reg('kickback',()=>{ upd(); A.now(); B.now(); });
+
+  // Deutsch
+  const cam2=newCam(); const DA=new View3D($('#cv-djA'),{cam:cam2,zoom:0.33}), DB=new View3D($('#cv-djB'),{cam:cam2,zoom:0.33});
+  const fs={'0':'f(x) = 0','1':'f(x) = 1','x':'f(x) = x','n':'f(x) = 1 − x','?':'Mystery'}; let fsel='x', hidden=null, step=0, show=[[0,0,1],[0,0,1]];
+  const names=['|0⟩|0⟩','X on y','H on both','oracle U_f','H on x','measure x'];
+  Object.keys(fs).forEach(k=>$('#dj-f').appendChild(btn(fs[k],()=>{ fsel=k; hidden=k==='?'?['0','1','x','n'][Math.floor(Math.random()*4)]:null; step=0; sync(true); },'btn')));
+  const fn=()=>fsel==='?'?hidden:fsel;
+  function simAt(n){ const s=new Sim(2); if(n>=1) s.apply(1,GATES.X.M); if(n>=2){ s.apply(0,GATES.H.M); s.apply(1,GATES.H.M); }
+    if(n>=3){ const F=fn(); if(F==='1') s.apply(1,GATES.X.M); if(F==='x') s.cnot(0,1); if(F==='n'){ s.cnot(0,1); s.apply(1,GATES.X.M); } }
+    if(n>=4) s.apply(0,GATES.H.M); return s; }
+  const localQ=n=>{ const F=fn(), bal=F==='x'||F==='n'; return [ [null,null], [null,GATES.X.q], [GATES.H.q,GATES.H.q], [bal?GATES.Z.q:null,null], [GATES.H.q,null], [null,null] ][n]; };
+  const rend=k=>V=>{ const it=sphereItems(V); const v=show[k]; it.push(vecItem(v,css('--ink'))); it.push(tipItem(v,css('--accent'),5)); V.draw(it); };
+  DA.render=rend(0); DB.render=rend(1);
+  function read(){ const s=simAt(step), F=fn(), bal=F==='x'||F==='n'; const amps=[0,1,2,3].map(i=>'('+cHTML(s.amp(i))+')|'+s.ket(i)+'⟩').join(' + ');
+    const msgs=['Both qubits start in |0⟩.','The answer qubit y is flipped to |1⟩.','x becomes |+⟩ and y becomes |−⟩, an eigenvector of X with eigenvalue −1.',
+      'The oracle maps |x⟩|y⟩ → |x⟩|y ⊕ f(x)⟩. Since y is |−⟩, this is a phase (−1)<sup>f(x)</sup> on x. '+(bal?'Balanced: x turns 180° about z, from |+⟩ to |−⟩. Quaternion <span class="qk">k</span>.':F==='1'?'f = 1: the whole state gets a factor −1, the quaternion −1. A global phase, so nothing moves.':'f = 0: nothing happens.'),
+      'H rotates x back to a pole: |+⟩ → |0⟩, |−⟩ → |1⟩.','Measuring x gives <b>'+(bal?'1, so f is balanced':'0, so f is constant')+'</b>, after a single query.'+(fsel==='?'?' The mystery function was '+fs[F]+'.':'')];
+    $('#dj-read').innerHTML='<b>Step '+step+':</b> '+msgs[step]+'<br><span class="k">state:</span> '+amps; stepsUI($('#dj-steps'),names,step);
+    $$('#dj-f .btn').forEach((b,i)=>b.classList.toggle('on',Object.keys(fs)[i]===fsel)); $('#dj-back').disabled=step===0; $('#dj-next').disabled=step===5; }
+  function sync(jump){ const s=simAt(step); const to=[s.bloch(0),s.bloch(1)]; read(); if(jump){ stopTween(DA); show=to; DA.request(); DB.request(); return; } }
+  function go(n){ if(n<0||n>5) return; const fwd=n===step+1, from=show.map(v=>v.slice()); const lq=fwd?localQ(n):[null,null]; step=n; const s=simAt(n), to=[s.bloch(0),s.bloch(1)]; read();
+    tween(DA,520,e=>{ show=[0,1].map(k=>{ if(lq[k]){ const {axis,angle}=Q.axisAngle(lq[k]); return Q.rot(Q.aa(axis,angle*e),from[k]); } return lerpV(from[k],to[k],e); }); DA.now(); DB.now(); },()=>{ show=to; DA.now(); DB.now(); }); }
+  $('#dj-next').onclick=()=>go(step+1); $('#dj-back').onclick=()=>go(step-1); $('#dj-reset').onclick=()=>{ if(fsel==='?') hidden=['0','1','x','n'][Math.floor(Math.random()*4)]; step=0; sync(true); };
+  reg('kickback',()=>{ sync(true); DA.now(); DB.now(); });
+})();
+
+// ===== Step 9: teleportation =====
+(function(){
+  const cam=newCam(); const Vs=[0,1,2].map(k=>new View3D($('#cv-tp'+k),{cam,zoom:0.32}));
+  const th=slider('tp-th',degf), ph=slider('tp-ph',degf), force=$('#tp-force'); let step=0, outcome=null, show=[[0,0,1],[0,0,1],[0,0,1]];
+  const names=['prepare |ψ⟩','H on q₁','CNOT q₁→q₂','CNOT q₀→q₁','H on q₀','measure q₀, q₁','Bob: X if m₁','Bob: Z if m₀'];
+  const psiQ=()=>Q.mul(Q.aa([0,0,1],ph.value*deg),Q.aa([0,1,0],th.value*deg)); const psiV=()=>dirOf(th.value*deg,ph.value*deg);
+  function simAt(n){ const s=new Sim(3); if(n>=0) s.apply(0,suOf(psiQ())); if(n>=1) s.apply(1,GATES.H.M); if(n>=2) s.cnot(1,2); if(n>=3) s.cnot(0,1); if(n>=4) s.apply(0,GATES.H.M);
+    if(n>=5){ if(outcome===null){ const fv=force.value; if(fv==='r'){ const t=s.clone(); const m0=t.measure(0), m1=t.measure(1); outcome=[m0,m1]; } else outcome=[(+fv)>>1, (+fv)&1]; }
+      const m0=outcome[0], m1=outcome[1]; s.project(i=>((i>>2)&1)===m0 && ((i>>1)&1)===m1); }
+    if(n>=6 && outcome[1]) s.apply(2,GATES.X.M); if(n>=7 && outcome[0]) s.apply(2,GATES.Z.M); return s; }
+  Vs.forEach((V,k)=>V.render=V=>{ const it=sphereItems(V); if(k===2) { const p=psiV(); it.push(vecItem(p,css('--muted'),{dash:[5,4],width:1.8,bias:-5})); }
+    const v=show[k], L=vlen(v); if(L<0.02) it.push({type:'point',p:[0,0,0],r:6,color:css('--accent'),ring:css('--ink'),bias:-7}); else { it.push(vecItem(v,css('--ink'))); it.push(tipItem(v,css('--accent'),5)); }
+    V.draw(it); });
+  const pauliName=['1','<span class="qi">i</span> (X)','<span class="qk">k</span> (Z)','<span class="qj">j</span> (Y)'];
+  function read(){ const s=simAt(step), b=s.bloch(2), p=psiV(), F=(1+vdot(b,p))/2;
+    const msgs=['Alice’s qubit q₀ holds the unknown |ψ⟩. q₁ and q₂ start in |0⟩.','q₁ goes onto the equator.','CNOT entangles q₁ with q₂: a Bell pair. Alice keeps q₁ and Bob takes q₂. Both of their spheres are now empty.',
+      'Alice entangles her message qubit with her half of the pair.','Alice rotates q₀ so that her measurement reads out the Bell basis.',
+      'Alice measures and gets m₀m₁ = <b>'+(outcome?outcome.join(''):'')+'</b>. Bob’s qubit jumped to the surface: it is |ψ⟩ turned by the quaternion '+(outcome?pauliName[outcome[0]*2+outcome[1]]:'')+'.',
+      'Bob receives the two bits. '+(outcome&&outcome[1]?'m₁ = 1, so he applies X, the quaternion <span class="qi">i</span>.':'m₁ = 0, so he does nothing.'),
+      (outcome&&outcome[0]?'m₀ = 1, so he applies Z, the quaternion <span class="qk">k</span>.':'m₀ = 0, so he does nothing.')+' Bob now holds |ψ⟩.'];
+    $('#tp-read').innerHTML='<b>Step '+step+':</b> '+msgs[step]+'<br><span class="k">Bob’s vector =</span> '+vHTML(b)+' &nbsp; <span class="k">fidelity with |ψ⟩ = (1 + r_B·r_ψ)/2 =</span> <b>'+f(F)+'</b>';
+    stepsUI($('#tp-steps'),names,step); $('#tp-back').disabled=step===0; $('#tp-next').disabled=step===7; }
+  function go(n, jump){ if(n<0||n>7) return; if(n<5) outcome=null; const fwd=n===step+1, from=show.map(v=>v.slice()); step=n; const s=simAt(n), to=[0,1,2].map(k=>s.bloch(k)); read();
+    let lq=[null,null,null]; if(fwd && n===6 && outcome[1]) lq[2]=GATES.X.q; if(fwd && n===7 && outcome[0]) lq[2]=GATES.Z.q; if(fwd && n===1) lq[1]=GATES.H.q; if(fwd && n===4) lq[0]=GATES.H.q;
+    if(jump){ stopTween(Vs[0]); show=to; Vs.forEach(V=>V.request()); return; }
+    tween(Vs[0],560,e=>{ show=[0,1,2].map(k=>{ if(lq[k]){ const {axis,angle}=Q.axisAngle(lq[k]); return Q.rot(Q.aa(axis,angle*e),from[k]); } return lerpV(from[k],to[k],e); }); Vs.forEach(V=>V.now()); },()=>{ show=to; Vs.forEach(V=>V.now()); }); }
+  $('#tp-next').onclick=()=>go(step+1); $('#tp-back').onclick=()=>go(step-1); $('#tp-reset').onclick=()=>{ outcome=null; go(0,true); };
+  [th,ph].forEach(x=>x.addEventListener('input',()=>{ outcome=null; go(0,true); })); force.addEventListener('change',()=>{ outcome=null; if(step>=5) go(step,true); });
+  reg('teleport',()=>{ go(step,true); Vs.forEach(V=>V.now()); });
+})();
+
+// ===== Step 10: Grover =====
+(function(){
+  const V=new View3D($('#cv-grover'),{zoom:0.35}); const nS=slider('gr-n',v=>v+'  (N = '+(1<<v)+')'), wI=$('#gr-w');
+  let a=0, b=0, iters=0, half=false, vShow=null, curAxis=null, trail=[];
+  const N=()=>1<<(+nS.value), th=()=>Math.asin(1/Math.sqrt(N()));
+  const bloch=()=>[2*a*b,0,b*b-a*a];
+  function reset(){ stopTween(V); a=1/Math.sqrt(N()); b=Math.sqrt(1-a*a); iters=0; half=false; trail=[]; curAxis=null; vShow=bloch(); wI.max=N()-1; if(+wI.value>N()-1) wI.value=N()-1; upd(); }
+  function anim(axis, done){ const v0=bloch(); done(); const path=arcPath(v0,axis,PI,40); curAxis=axis; upd();
+    tween(V,600,e=>{ vShow=Q.rot(Q.aa(axis,PI*e),v0); V._partial=path.slice(0,Math.round(e*40)+1); V.now(); },()=>{ trail.push(path); V._partial=null; vShow=bloch(); curAxis=null; V.now(); }); }
+  const oracle=()=>anim([0,0,1],()=>{ a=-a; half=!half; });
+  const diff=()=>{ const t=th(); anim([Math.sin(2*t),0,Math.cos(2*t)],()=>{ const sA=Math.sin(t), sB=Math.cos(t), d=a*sA+b*sB; a=2*d*sA-a; b=2*d*sB-b; if(half){ half=false; iters++; } }); };
+  $('#gr-oracle').onclick=oracle; $('#gr-diff').onclick=diff; $('#gr-reset').onclick=reset;
+  $('#gr-iter').onclick=()=>{ if(half){ diff(); return; } const v0=bloch(); a=-a; const t=th(); const sA=Math.sin(t), sB=Math.cos(t), d=a*sA+b*sB; a=2*d*sA-a; b=2*d*sB-b; iters++;
+    const q=Q.aa([0,1,0],4*t); const path=arcPath(v0,[0,1,0],4*t,40); curAxis=[0,1,0]; upd();
+    tween(V,650,e=>{ vShow=Q.rot(Q.aa([0,1,0],4*t*e),v0); V._partial=path.slice(0,Math.round(e*40)+1); V.now(); },()=>{ trail.push(path); V._partial=null; vShow=bloch(); curAxis=null; V.now(); }); };
+  V.render=V=>{ const it=sphereItems(V,{poles:false}); const ac=css('--accent'), ink=css('--ink'), gold=css('--gold'), t=th();
+    it.push({type:'text',p:[0,0,1.13],text:"|s′⟩",color:ink,dx:24}); it.push({type:'text',p:[0,0,-1.13],text:'|w⟩',color:ink,dx:22});
+    const sAx=[Math.sin(2*t),0,Math.cos(2*t)]; it.push({type:'point',p:sAx,r:4,color:css('--muted')}); it.push({type:'text',p:sAx,text:'|s⟩',color:css('--muted'),dx:16,dy:-10});
+    trail.forEach(p=>it.push(...trailItems(p,ac,2,.6))); if(V._partial) it.push(...trailItems(V._partial,ac,2.4,1));
+    if(curAxis) it.push(...axisLine(curAxis,gold,1.35));
+    const v=vShow||bloch(); it.push(vecItem(v,ink)); it.push(tipItem(v,ac,5)); V.draw(it); };
+  function bars(){ const n=N(), w=clamp(+wI.value||0,0,n-1), W=320,H=170,T=10,B=10, mid=T+(H-T-B)/2, sc=(H-T-B)/2*0.95, bw=(W-20)/n;
+    const ov=b/Math.sqrt(n-1), mean=(a+(n-1)*ov)/n; const ac=css('--accent'), mu=css('--muted'), gold=css('--gold'), rule=css('--rule');
+    let s='<line x1="10" x2="'+(W-10)+'" y1="'+mid+'" y2="'+mid+'" style="stroke:'+rule+'"/>';
+    for(let i=0;i<n;i++){ const v=i===w?a:ov, h=v*sc, x=10+i*bw; s+='<rect x="'+x.toFixed(2)+'" y="'+(h>=0?mid-h:mid).toFixed(2)+'" width="'+Math.max(0.6,bw-(n>64?0:1)).toFixed(2)+'" height="'+Math.max(0.5,Math.abs(h)).toFixed(2)+'" style="fill:'+(i===w?ac:mu)+'"/>'; }
+    s+='<line x1="10" x2="'+(W-10)+'" y1="'+(mid-mean*sc).toFixed(1)+'" y2="'+(mid-mean*sc).toFixed(1)+'" style="stroke:'+gold+';stroke-dasharray:4 3"/><text x="'+(W-12)+'" y="'+(mid-mean*sc-4).toFixed(1)+'" text-anchor="end" style="fill:'+gold+';font-size:11px">mean</text>';
+    svgEl($('#gr-bars'),s); }
+  function upd(){ const n=N(), t=th(), kopt=Math.max(0,Math.round(PI/(4*t)-0.5)); bars();
+    $('#gr-read').innerHTML='<span class="k">N =</span> '+n+' &nbsp; <span class="k">θ = arcsin(1/√N) =</span> '+fd(t,2)+' &nbsp; <span class="k">iterations so far:</span> '+iters+(half?' (oracle applied, diffusion pending)':'')+
+      '<br><span class="k">P(find w) = a_w² =</span> <b>'+f(a*a)+'</b> &nbsp; <span class="k">best iteration count ≈ π/(4θ) − ½ =</span> '+kopt+' &nbsp; <span class="k">classical guesses on average ≈</span> '+(n/2)+
+      '<br><span class="k">one iteration = s·k =</span> '+qHTML(Q.mul([0,Math.sin(2*t),0,Math.cos(2*t)],[0,0,0,1]))+' &nbsp; <span class="k">a rotation of 4θ =</span> '+fd(4*t,1)+' about y';
+    V.request(); }
+  nS.addEventListener('input',reset); wI.addEventListener('input',()=>{ upd(); });
+  reg('grover',()=>{ if(!b) reset(); else upd(); V.now(); });
+})();
+
+// ===== Step 11: synthesis (meet-in-the-middle over a BFS table of H/T words) =====
+(function(){
+  const V=new View3D($('#cv-synth'),{zoom:0.34}); const ang=slider('sy-ang',degf), len=slider('sy-len',v=>v);
+  let nodes=null, grid=null, prefixEnd=[], building=false, target=null, randAxis=null, best=null, maxM=0; const G=32;
+  const cellOf=v=>{ const c=v.map(x=>clamp(Math.floor((x+1)/2*G),0,G-1)); return (c[0]*G+c[1])*G+c[2]; };
+  function buildAsync(done){ if(nodes||building) return; building=true; $('#sy-status').textContent='Building the table…';
+    const h=GATES.H.q, t=GATES.T.q, MAX=50000; const key=q=>{ let s=1; for(const x of q){ if(Math.abs(x)>1e-9){ s=x<0?-1:1; break; } } return q.map(x=>Math.round(x*s*1e6)).join(','); };
+    const ns=[{q:[1,0,0,0],w:'',len:0,tc:0}], seen=new Set([key([1,0,0,0])]); let frontier=[0], next=[], fi=0;
+    const tick=()=>{ let ops=0; while(ops<5000 && ns.length<MAX){ if(fi>=frontier.length){ if(!next.length) break; frontier=next; next=[]; fi=0; }
+        const n=ns[frontier[fi++]]; for(const [nm,g] of [['H',h],['T',t]]){ if(nm==='H' && n.w.endsWith('H')) continue; const q=Q.mul(g,n.q), k=key(q); if(seen.has(k)) continue; seen.add(k); ns.push({q,w:n.w+nm,len:n.len+1,tc:n.tc+(nm==='T'?1:0)}); next.push(ns.length-1); if(ns.length>=MAX) break; } ops++; }
+      $('#sy-status').textContent='Building the table… '+ns.length.toLocaleString();
+      if(ns.length<MAX && (fi<frontier.length || next.length)) setTimeout(tick,0); else finish(ns); };
+    const finish=ns=>{ // drop the incomplete last level so every length up to maxM is complete
+      const lastLen=ns[ns.length-1].len; nodes=ns.filter(n=>n.len<lastLen); maxM=lastLen-1;
+      grid=new Map(); const add=(k,i)=>{ let a=grid.get(k); if(!a){ a=[]; grid.set(k,a); } a.push(i); };
+      nodes.forEach((n,i)=>{ const q=n.q[0]<0?Q.scale(n.q,-1):n.q; n.qn=q; add(cellOf(q.slice(1)),i); if(q[0]<0.15) add(cellOf(q.slice(1).map(x=>-x)),i); });
+      prefixEnd=[]; let i=0; for(let m=0;m<=maxM;m++){ while(i<nodes.length && nodes[i].len<=m) i++; prefixEnd[m]=i; }
+      len.max=2*maxM; len.step=2; if(+len.value>2*maxM) len.value=2*maxM; len.dispatchEvent(new Event('input'));
+      building=false; $('#sy-status').textContent=nodes.length.toLocaleString()+' words · '+(nodes.length**2/1e9).toFixed(1)+' billion products'; done&&done(); };
+    setTimeout(tick,30); }
+  function nearest(qn, limit){ const c=[1,2,3].map(i=>clamp(Math.floor((qn[i]+1)/2*G),0,G-1)); let bi=-1, bd=9;
+    for(let dx=-1;dx<=1;dx++) for(let dy=-1;dy<=1;dy++) for(let dz=-1;dz<=1;dz++){ const x=c[0]+dx, y=c[1]+dy, z=c[2]+dz; if(x<0||y<0||z<0||x>=G||y>=G||z>=G) continue;
+      const a=grid.get((x*G+y)*G+z); if(!a) continue; for(const idx of a){ if(idx>=limit) break; const p=nodes[idx].q; const d=1-Math.abs(p[0]*qn[0]+p[1]*qn[1]+p[2]*qn[2]+p[3]*qn[3]); if(d<bd){ bd=d; bi=idx; } } }
+    return bi; }
+  function tgt(){ return randAxis ? Q.aa(randAxis, ang.value*deg) : Q.aa([0,0,1], ang.value*deg); }
+  function compute(){ if(!nodes) return; target=tgt(); const T=target; best=[]; let cur=null;
+    for(let m=0;m<=maxM;m++){ const lim=prefixEnd[m];
+      for(let i=(m?prefixEnd[m-1]:0)>0?0:0;i<lim;i++){ const A=nodes[i]; let need=Q.mul(Q.conj(A.q),T); if(need[0]<0) need=Q.scale(need,-1);
+        const j=nearest(need,lim); if(j<0) continue; const B=nodes[j]; const tot=Q.mul(A.q,B.q), d=Q.dist(tot,T);
+        if(!cur || d<cur.d-1e-12 || (Math.abs(d-cur.d)<1e-12 && A.len+B.len<cur.len)) cur={d, q:tot, w:B.w+A.w, len:A.len+B.len, tc:A.tc+B.tc}; }
+      best[m]=cur; } }
+  const pick=()=>best?best[Math.min(maxM,Math.floor(+len.value/2))]:null;
+  V.render=V=>{ const it=sphereItems(V,{poles:false}); const T=target||tgt(); it.push(...triadItems(T,true)); const b=pick(); if(b) it.push(...triadItems(b.q,false)); V.draw(it); };
+  function plot(){ const W=320,H=200,Lm=44,R=10,T=12,B=32; if(!best){ svgEl($('#sy-plot'),'<text x="160" y="100" text-anchor="middle" style="fill:'+css('--muted')+';font-size:13px">Building the gate table…</text>'); return; }
+    const maxL=2*maxM, lo=-2, hi=Math.log10(180); const x=L=>Lm+(W-Lm-R)*L/maxL, y=v=>T+(H-T-B)*(1-(clamp(v,lo,hi)-lo)/(hi-lo));
+    const mu=css('--muted'), rule=css('--rule'), ac=css('--accent'), gold=css('--gold'); let s='<rect x="'+Lm+'" y="'+T+'" width="'+(W-Lm-R)+'" height="'+(H-T-B)+'" style="fill:none;stroke:'+rule+'"/>';
+    [[-2,'0.01°'],[-1,'0.1°'],[0,'1°'],[1,'10°'],[hi,'180°']].forEach(([v,l])=>s+='<line x1="'+Lm+'" x2="'+(W-R)+'" y1="'+y(v)+'" y2="'+y(v)+'" style="stroke:'+rule+';stroke-dasharray:2 3"/><text x="'+(Lm-5)+'" y="'+(y(v)+4)+'" text-anchor="end" style="fill:'+mu+';font-size:11px">'+l+'</text>');
+    for(let L=0;L<=maxL;L+=10) s+='<text x="'+x(L)+'" y="'+(H-B+15)+'" text-anchor="middle" style="fill:'+mu+';font-size:11px">'+L+'</text>';
+    s+='<text x="'+((Lm+W-R)/2)+'" y="'+(H-4)+'" text-anchor="middle" style="fill:'+mu+';font-size:11px">max word length</text>';
+    let d=''; best.forEach((b,m)=>{ if(!b) return; d+=(d?'L':'M')+x(2*m).toFixed(1)+','+y(Math.log10(Math.max(1e-9,b.d/deg))).toFixed(1); });
+    s+='<path d="'+d+'" style="fill:none;stroke:'+ac+';stroke-width:2.2"/>'; const m=Math.min(maxM,Math.floor(+len.value/2)), bb=best[m];
+    if(bb) s+='<circle cx="'+x(2*m)+'" cy="'+y(Math.log10(Math.max(1e-9,bb.d/deg)))+'" r="5" style="fill:'+gold+';stroke:'+css('--paper')+';stroke-width:1.5"/>';
+    svgEl($('#sy-plot'),s); }
+  function read(){ const b=pick(); if(!b){ $('#sy-read').innerHTML='Building a table of H/T words. This takes about a second.'; return; }
+    $('#sy-read').innerHTML='<span class="k">target:</span> '+(randAxis?'rotation by '+ang.value+'° about '+vHTML(randAxis,2):'R<sub>z</sub>('+ang.value+'°)')+' &nbsp; <span class="k">q =</span> '+qHTML(target)+
+      '<br><span class="k">best word with at most '+(+len.value)+' gates</span> (circuit order, left to right): <b>'+(b.w||'(empty: identity)')+'</b>'+
+      '<br><span class="k">length</span> '+b.len+' &nbsp; <span class="k">T-count</span> '+b.tc+' &nbsp; <span class="k">its quaternion</span> '+qHTML(b.q)+' &nbsp; <span class="k">error</span> <b>'+fd(b.d,3)+'</b>'; }
+  let pend=false; function upd(){ if(pend) return; pend=true; requestAnimationFrame(()=>{ pend=false; compute(); plot(); read(); V.now(); }); }
+  ang.addEventListener('input',upd); len.addEventListener('input',()=>{ plot(); read(); V.request(); });
+  $('#sy-rand').onclick=()=>{ randAxis=[Math.random()-.5,Math.random()-.5,Math.random()-.5]; const n=vlen(randAxis); randAxis=randAxis.map(x=>x/n); ang.value=Math.round(20+Math.random()*150); ang.dispatchEvent(new Event('input')); };
+  reg('synthesis',()=>{ target=tgt(); upd(); buildAsync(()=>upd()); });
+})();
+
+// ===== Step 12: error correction =====
+(function(){
+  const VL=new View3D($('#cv-qeL'),{zoom:0.34}); const cam=newCam(); const VP=[0,1,2].map(k=>new View3D($('#cv-qe'+k),{cam,zoom:0.36}));
+  const th=slider('qe-th',degf), ph=slider('qe-ph',degf), eps=slider('qe-eps',degf), where=$('#qe-where');
+  let step=0, rnd=[Math.random(),Math.random()], synd=null;
+  const names=['prepare |ψ⟩','encode','error','measure syndrome','correct','decode'];
+  const psiQ=()=>Q.mul(Q.aa([0,0,1],ph.value*deg),Q.aa([0,1,0],th.value*deg)), psiV=()=>dirOf(th.value*deg,ph.value*deg);
+  function simAt(n){ const s=new Sim(3); s.apply(0,suOf(psiQ())); if(n>=1){ s.cnot(0,1).cnot(0,2); }
+    if(n>=2){ const E=rotGate([1,0,0],eps.value*deg).M, w=where.value; if(w==='01'){ s.apply(0,E); s.apply(1,E); } else if(w!=='n') s.apply(+w,E); }
+    if(n>=3){ const a=s.measureParity(s.mask(0,1),rnd[0]), b=s.measureParity(s.mask(1,2),rnd[1]); synd=[a,b]; }
+    if(n>=4){ const [a,b]=synd; const k=a&&!b?0:a&&b?1:!a&&b?2:-1; if(k>=0) s.apply(k,GATES.X.M); }
+    if(n>=5){ s.cnot(0,2).cnot(0,1); } return s; }
+  const sectors=[[0,'none (000/111)'],[4,'q₀ flipped (100/011)'],[2,'q₁ flipped (010/101)'],[1,'q₂ flipped (001/110)']];
+  function logical(s,n){ if(n===0||n===5) return {v:s.bloch(0), sec:null};
+    const ws=sectors.map(([x])=>s.re[x]**2+s.im[x]**2+s.re[x^7]**2+s.im[x^7]**2); const i=ws.indexOf(Math.max(...ws));
+    if(ws[i]<0.999) return {v:null, ws}; const x=sectors[i][0], nrm=Math.sqrt(ws[i]); return {v:blochOf([s.re[x]/nrm,s.im[x]/nrm],[s.re[x^7]/nrm,s.im[x^7]/nrm]), ws, sec:i}; }
+  function sectorProbs(s){ return sectors.map(([x])=>s.re[x]**2+s.im[x]**2+s.re[x^7]**2+s.im[x^7]**2); }
+  VL.render=V=>{ const it=sphereItems(V); const p=psiV(); it.push(vecItem(p,css('--muted'),{dash:[5,4],width:1.8,bias:-5})); const s=simAt(step), L=logical(s,step);
+    if(L.v){ it.push(vecItem(L.v,css('--ink'))); it.push(tipItem(L.v,css('--accent'),5)); } else { it.push({type:'text',p:[0,0,0],text:'spread over several sectors',color:css('--bad'),font:'600 13px '+css('--f-ui'),bias:-9}); }
+    V.draw(it); };
+  VP.forEach((V,k)=>V.render=V=>{ const it=sphereItems(V); const v=simAt(step).bloch(k); if(vlen(v)<0.03) it.push({type:'point',p:[0,0,0],r:4,color:css('--accent'),bias:-7}); else { it.push(vecItem(v,css('--ink'),{width:2.2,head:7})); } V.draw(it); });
+  function read(){ const s=simAt(step), ws=sectorProbs(s); stepsUI($('#qe-steps'),names,step);
+    $('#qe-sect').innerHTML=(step===0||step===5)?'<span class="hint" style="grid-column:1/-1">Sectors apply to the encoded state (steps 1 to 4).</span>':sectors.map(([x,l],i)=>'<span>'+l+'</span><span class="bar"><span style="width:'+(100*ws[i]).toFixed(1)+'%"></span></span><span>'+f(ws[i])+'</span>').join('');
+    const e=eps.value*deg, w=where.value; const msgs=[
+      'q₀ holds |ψ⟩. q₁ and q₂ start in |0⟩.',
+      'Two CNOTs give α|000⟩ + β|111⟩. Each physical qubit now sits on its z-axis inside its ball, so no single qubit knows φ.',
+      w==='n'?'No error this time.':'R<sub>x</sub>('+eps.value+'°) hit '+(w==='01'?'qubits 0 and 1':'qubit '+w)+'. Quaternion '+qHTML(Q.aa([1,0,0],e))+'. The state is now a superposition of “no error” and “flipped”.',
+      'Parities measured: Z₀Z₁ = '+(synd?synd[0]:'')+', Z₁Z₂ = '+(synd?synd[1]:'')+'. The continuous error collapsed into a single sector. Before measuring, the odds of “no error” were '+f(sectorProbs(simAt(2))[0])+'.',
+      (synd&&(synd[0]||synd[1])?'Apply X (quaternion <span class="qi">i</span>) to qubit '+(synd[0]&&!synd[1]?0:synd[0]&&synd[1]?1:2)+'.':'Syndrome 00: no correction needed.')+' The state is back in the code space.',
+      'Undo the encoding. q₀ should hold |ψ⟩ again.'];
+    let tail=''; if(step===5){ const v=s.bloch(0), F=(1+vdot(v,psiV()))/2; tail='<br><span class="k">fidelity with |ψ⟩ =</span> <b>'+f(F)+'</b> '+(F>0.9999?'<span class="badge ok">recovered exactly</span>':'<span class="badge warn">logical error</span>'); }
+    $('#qe-read').innerHTML='<b>Step '+step+':</b> '+msgs[step]+tail; $('#qe-back').disabled=step===0; $('#qe-next').disabled=step===5; }
+  function go(n){ if(n<0||n>5) return; if(n<3) synd=null; step=n; read(); VL.request(); VP.forEach(V=>V.request()); }
+  $('#qe-next').onclick=()=>go(step+1); $('#qe-back').onclick=()=>go(step-1); $('#qe-reset').onclick=()=>{ rnd=[Math.random(),Math.random()]; go(0); };
+  [th,ph,eps].forEach(x=>x.addEventListener('input',()=>{ rnd=[Math.random(),Math.random()]; go(step); })); where.addEventListener('change',()=>{ rnd=[Math.random(),Math.random()]; go(step); });
+  reg('qec',()=>{ go(step); VL.now(); VP.forEach(V=>V.now()); });
+})();
+
+// ===== Step 13: quiz =====
+(function(){
+  const QZ=[
+    ['A qubit is at Bloch vector (0, 0, −1). What is it?',['|0⟩','|1⟩','|+⟩','A mixed state'],1,'The south pole is |1⟩.'],
+    ['The state has Bloch vector r and you measure along n. What is P(+n)?',['r·n','(1 + r·n)/2','|r × n|','cos(r·n)'],1,'P(+n) = (1 + r·n)/2 = cos²(α/2), where α is the angle between r and n.'],
+    ['Which quaternion is the Hadamard gate, up to sign?',['(1 + i)/√2','(i + k)/√2','(j + k)/√2','j'],1,'H is a half-turn about (x + z)/√2.'],
+    ['The circuit “first X, then Y” has which quaternion?',['ij = k','ji = −k','i + j','1'],1,'The last gate goes on the left: q = q_Y q_X = ji = −k.'],
+    ['Multiplying a state by e^{iγ} changes…',['the Bloch vector','the measurement probabilities','nothing observable','only P(1)'],2,'A global phase is invisible. Only relative phases rotate the sphere.'],
+    ['A Bloch vector of length 0.6 means the qubit is…',['pure','mixed, or entangled with something else','measured','in |+⟩'],1,'Only pure states reach the surface.'],
+    ['For the Bell state Φ⁺, what does qubit A’s sphere show?',['the north pole','the x-axis','the centre (r = 0)','a random point'],2,'Maximal entanglement means each reduced state is I/2, with C = 1 and |r| = 0.'],
+    ['In teleportation, outcome m₀m₁ = 11 is corrected by which quaternion?',['1','i','j','k'],2,'X then Z gives ki = j, a half-turn about y.'],
+    ['One Grover iteration is the product of two half-turns. Its rotation angle is…',['θ','2θ','4θ','π'],2,'The two axes are 2θ apart, so the product rotates by 4θ.'],
+    ['Why does the 3-qubit code fix a small R_x(ε) error exactly?',['It copies the qubit three times','The syndrome measurement collapses the error to “none” or “full X”','It measures α and β','ε is always 180°'],1,'Measuring the parities discretises the error. The flip is then undone with X = i.'],
+  ];
+  const box=$('#quiz'); QZ.forEach(([q,o],i)=>{ const d=document.createElement('div'); d.className='qcard';
+    d.innerHTML='<div><b>'+(i+1)+'.</b> '+q+'</div><div class="opts">'+o.map((t,j)=>'<label for="qz'+i+'_'+j+'"><input type="radio" name="qz'+i+'" id="qz'+i+'_'+j+'" value="'+j+'"> <span>'+t+'</span></label>').join('')+'</div><div class="fb" id="qzfb'+i+'"></div>'; box.appendChild(d); });
+  $('#quiz-check').onclick=()=>{ let s=0; QZ.forEach(([,o,a,e],i)=>{ const sel=$('input[name="qz'+i+'"]:checked'), fb=$('#qzfb'+i); if(!sel){ fb.className='fb'; fb.textContent='Not answered yet.'; return; }
+    const ok=+sel.value===a; if(ok) s++; fb.className='fb '+(ok?'ok':'no'); fb.textContent=(ok?'Correct. ':'Not quite. The answer is “'+o[a]+'”. ')+e; }); $('#quiz-score').textContent=s+' / '+QZ.length; };
+  $('#quiz-reset').onclick=()=>{ $$('#quiz input').forEach(x=>x.checked=false); $$('#quiz .fb').forEach(x=>{ x.textContent=''; x.className='fb'; }); $('#quiz-score').textContent=''; };
+})();
+
+// ===== boot =====
+(function(){ const h=(location.hash||'').slice(1); let i=ids.indexOf(h); if(i<0){ const s=store('qsph-current'); i=ids.indexOf(s||''); } show(i<0?0:i,false);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(redrawAll); })();
+
+})();
+</script>
+
+</body></html>
