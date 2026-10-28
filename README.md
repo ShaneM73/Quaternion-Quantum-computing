@@ -36,3 +36,7 @@ Then open http://localhost:8000.
 ## Publish
 
 The site is plain static HTML and is served by GitHub Pages from the `main` branch root.
+
+## License
+
+Code and course content are released under the [MIT License](LICENSE).
